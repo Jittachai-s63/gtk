@@ -1,6 +1,6 @@
 // $ sudo apt-get install libgtk-3-dev
 /*
-gcc -g guitest2.c -o guitest2 -lmosquitto -lpthread -lcurl \
+gcc -g guitest2.c -o guitest2 -lmosquitto -lpthread  \
     `pkg-config --cflags gtk+-3.0` \
     `pkg-config --libs gtk+-3.0`
 */ 
@@ -19,7 +19,7 @@ gcc -g guitest2.c -o guitest2 -lmosquitto -lpthread -lcurl \
 
 
 GtkApplication *app;
-GtkWidget *window, *pic_window ,*tree_window,*mosq_window;
+GtkWidget *window, *pic_window ,*tree_window,*mosq_window,*login_window;
 GtkWidget *headerbar , *tree_headerbar;
 GtkWidget *head_button1 ;
 
@@ -34,8 +34,9 @@ GtkWidget *gearicon;
 GtkWidget *tree_button, *tree_button2;
 GtkWidget *sw, *treeview, *box , *hbox;
 
-GtkWidget *head_label,*sub_label1, *sub_label2, *sub_label3,*sub_label4,*label_topic,*label_sever;
-GtkWidget *sub_entry1, *sub_entry2 , *sub_entry3 ;
+
+GtkWidget *head_label,*sub_label1, *sub_label2, *sub_label3,*sub_label4,*label_topic;
+GtkWidget *sub_entry1, *sub_entry2 , *sub_entry3 , *server_entry , *topic_entry;
 GtkWidget *sub_button1;
 
 GtkWidget *grid, *sub_grid , *pic_grid;
@@ -45,6 +46,9 @@ GtkWidget *main_label1, *main_label2, *main_label3,*main_label4,*main_label5,*ma
 GtkWidget *main_status ;
 GtkWidget *main_button1, *main_button2 ,*main_button3 ;
 
+GtkWidget *server_button1;
+///
+GtkWidget *login_entry,*pass_entry,*label_sever,*label_login,*label_pass,*back_window,*login_entry;
 
 static gboolean counter_enabled = FALSE;
 static gboolean tree_stat = FALSE;
@@ -56,6 +60,9 @@ struct mosquitto *mosq = NULL;
 char *text_entry1,*text_entry2,*text_entry3;
 char *sp_cam,temp_str[100],lebel_cam[100] ;
 char cam_id1[100], cam_id2[100], cam_id3[100];
+char cid1[100],cid2[100],cid3[100] ;
+
+int i = 0;
 
 
 void head_button1_callback( GtkWidget* , gpointer ) ;
@@ -69,6 +76,7 @@ void main_button2_callback( GtkWidget* , gpointer ) ;
 void sub_button1_callback( GtkWidget* , gpointer ) ;
 void server_button( GtkWidget* , gpointer ) ;
 void topic_button( GtkWidget* , gpointer ) ;
+void login_button( GtkWidget* , gpointer ) ;
 
 void activate( GtkApplication* , gpointer ) ;
 void sub_activate( GtkApplication* , gpointer ) ;
@@ -100,16 +108,18 @@ student text_data[1000] ;
 
 const GActionEntry app_actions[] = {
     { "server", server_button },
-    { "topic", topic_button }
+    { "topic", topic_button },
+    { "login", login_button }
+
 };
 
 
 int main( int argc,char **argv ) {
 
-    //to_connect_mqtt( mosq , clean_session);
+    to_connect_mqtt( mosq , clean_session);
 
     //---------------------------------------
-
+    
     int status;
 	app = gtk_application_new( NULL, G_APPLICATION_FLAGS_NONE );
     g_timeout_add_seconds( 1 /*sec*/, G_SOURCE_FUNC(name_pic), NULL );
@@ -129,12 +139,12 @@ int main( int argc,char **argv ) {
 	// decrease the reference count to the object
 	g_object_unref( app );
 
-    /*
+    
     FILE *fp;
     fp = fopen("data.txt","w");
     fprintf(fp,"");
     fclose(fp);
-    */
+    
 
 	return status ;
 }
@@ -171,10 +181,14 @@ void sub_button1_callback( GtkWidget *widget, gpointer data ) {
         }
 
         if( t1 && t2 && t3 ){
-            sprintf(cam_id1,"cam%s",gtk_entry_get_text (GTK_ENTRY (sub_entry1)));
-            sprintf(cam_id2,"cam%s",gtk_entry_get_text (GTK_ENTRY (sub_entry2)));
-            sprintf(cam_id3,"cam%s",gtk_entry_get_text (GTK_ENTRY (sub_entry3)));
+            sprintf(cam_id1,"Cam : %s",gtk_entry_get_text (GTK_ENTRY (sub_entry1)));
+            sprintf(cam_id2,"Cam : %s",gtk_entry_get_text (GTK_ENTRY (sub_entry2)));
+            sprintf(cam_id3,"Cam : %s",gtk_entry_get_text (GTK_ENTRY (sub_entry3)));
             
+            sprintf(cid1,"cam%s",gtk_entry_get_text (GTK_ENTRY (sub_entry1)));
+            sprintf(cid2,"cam%s",gtk_entry_get_text (GTK_ENTRY (sub_entry2)));
+            sprintf(cid3,"cam%s",gtk_entry_get_text (GTK_ENTRY (sub_entry3)));
+
             gtk_widget_destroy(sub_grid);
             main_activate(app,NULL);
             counter_enabled = TRUE ;
@@ -366,20 +380,383 @@ void tree_button2_callback( GtkWidget *widget, gpointer data ) {
     gtk_widget_show_all(pic_window);
 }
 
-void server_button( GtkWidget *widget, gpointer data ) {
-    printf("hi\n");
-    mosq_window = gtk_application_window_new( app );
-	
-	gtk_window_set_title( GTK_WINDOW(mosq_window), "Server" );
-	gtk_window_set_default_size( GTK_WINDOW(mosq_window), 100, 50 );
-    gtk_window_set_resizable (GTK_WINDOW(mosq_window), FALSE);
-	gtk_window_set_position( GTK_WINDOW(mosq_window), GTK_WIN_POS_CENTER );
+char serverdoit = false;
+char topicdoit  = false;
 
-    gtk_widget_show_all(mosq_window);
+static void show_question(GtkWidget *widget, gpointer mosq_window) {
+  
+  GtkResponseType result;
+  GtkWidget *dialog;
+  //GtkWidget *out;
+  dialog = gtk_message_dialog_new(GTK_WINDOW(mosq_window),
+            GTK_DIALOG_DESTROY_WITH_PARENT,
+            GTK_MESSAGE_QUESTION,
+            GTK_BUTTONS_YES_NO,
+            "\n Do You Want Save & Exit ?");
+  gtk_window_set_title(GTK_WINDOW(dialog), "   Save & Exit  ");         
+
+  result = gtk_dialog_run(GTK_DIALOG(dialog));
+  if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
+    g_print( "Exit..." );
+    serverdoit = false;
+    //gtk_widget_destroy(window);
+    gtk_widget_destroy(mosq_window);
+    
+     
+   }
+  gtk_widget_destroy(dialog);
+
+  
+}
+
+static void show_question_topic(GtkWidget *widget, gpointer mosq_window) {
+  
+  GtkResponseType result;
+  GtkWidget *dialog;
+  //GtkWidget *out;
+  dialog = gtk_message_dialog_new(GTK_WINDOW(mosq_window),
+            GTK_DIALOG_DESTROY_WITH_PARENT,
+            GTK_MESSAGE_QUESTION,
+            GTK_BUTTONS_YES_NO,
+            "\n Do You Want Save & Exit ?");
+  gtk_window_set_title(GTK_WINDOW(dialog), "   Save & Exit  ");         
+
+  result = gtk_dialog_run(GTK_DIALOG(dialog));
+  if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
+    g_print( "Exit..." );
+    topicdoit = false;
+    //gtk_widget_destroy(window);
+    gtk_widget_destroy(mosq_window);
+    
+     
+   }
+  gtk_widget_destroy(dialog);
+
+  
+}
+
+static void show_question_login(GtkWidget *widget, gpointer login_window) {
+  
+  GtkResponseType result;
+  GtkWidget *dialog;
+  //GtkWidget *out;
+  dialog = gtk_message_dialog_new(GTK_WINDOW(login_window),
+            GTK_DIALOG_DESTROY_WITH_PARENT,
+            GTK_MESSAGE_QUESTION,
+            GTK_BUTTONS_YES_NO,
+            "\n Do You Want Exit ?");
+  gtk_window_set_title(GTK_WINDOW(dialog), "  Exit  ");         
+
+  result = gtk_dialog_run(GTK_DIALOG(dialog));
+  if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
+    g_print( "Exit..." );
+    topicdoit = false;
+    //gtk_widget_destroy(window);
+    gtk_widget_destroy(login_window);
+    
+     
+   }
+  gtk_widget_destroy(dialog);
+
+  
+}
+
+static void check_false_server(GtkWidget *widget, gpointer mosq_window) {
+    serverdoit = false;
+}
+
+static void check_false_topic(GtkWidget *widget, gpointer mosq_window) {
+    topicdoit = false;
+}
+
+void server_button( GtkWidget *widget, gpointer data ) {
+    
+    printf("Out loop %d",i);
+    if (!serverdoit){
+    //if (i == 0){
+        serverdoit = true;
+        //printf("hi\n");
+        //i ++;
+        //printf("if %d \n",i);
+        
+        mosq_window = gtk_application_window_new( app );
+	
+	    gtk_window_set_title( GTK_WINDOW(mosq_window), "Server" );
+	    gtk_window_set_default_size( GTK_WINDOW(mosq_window), 300, 200 );
+        gtk_window_set_resizable (GTK_WINDOW(mosq_window), FALSE);
+        
+	    gtk_window_set_position( GTK_WINDOW(mosq_window), GTK_WIN_POS_CENTER);
+
+        headerbar = gtk_header_bar_new ();
+        gtk_widget_show(headerbar);
+        gtk_window_set_application(GTK_WINDOW(mosq_window), GTK_APPLICATION (app));
+        gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "SMK ");
+        gtk_header_bar_set_subtitle(GTK_HEADER_BAR(headerbar), "Server");
+        gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), false);
+        gtk_window_set_titlebar (GTK_WINDOW(mosq_window), headerbar);
+
+
+        grid = gtk_grid_new ();
+        gtk_container_add (GTK_CONTAINER (mosq_window), grid);
+        gtk_grid_set_column_spacing ( GTK_GRID ( grid ), 4 );
+        gtk_grid_set_row_spacing ( GTK_GRID ( grid ), 4 );
+
+
+        label_sever = gtk_label_new("Server");
+        gtk_widget_override_font(label_sever,
+                            pango_font_description_from_string("FreeSerif 20"));
+        gtk_grid_attach (GTK_GRID (grid), label_sever, 0, 0, 1, 1);
+        gtk_widget_set_margin_top ( label_sever, 20 );
+        gtk_widget_set_margin_start ( label_sever, 70 );
+        gtk_widget_set_margin_end ( label_sever, 40 );
+
+
+        server_entry = gtk_entry_new();
+        gtk_entry_set_text(GTK_ENTRY(server_entry),"------Input Server------");
+        gtk_widget_set_margin_top ( server_entry, 20 );
+        gtk_grid_attach (GTK_GRID (grid), server_entry, 0, 1, 1, 1);
+        gtk_widget_set_margin_start ( server_entry, 70 );
+        gtk_widget_set_margin_end ( server_entry, 40 );
+        
+        server_button1 =  gtk_button_new_with_label( "Save" );
+        gtk_grid_attach (GTK_GRID (grid), server_button1, 0, 2, 1, 1);
+        g_signal_connect(server_button1, "clicked", G_CALLBACK(show_question),mosq_window); 
+        gtk_widget_set_margin_start ( server_button1, 90 );
+        gtk_widget_set_margin_end ( server_button1, 60 );
+        gtk_widget_set_margin_top ( server_button1, 10 );
+        
+        back_window = gtk_button_new_with_label( "Back" );
+        gtk_grid_attach (GTK_GRID (grid), back_window, 0, 3, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid), server_button1, 0, 2, 1, 1);
+        g_signal_connect(back_window, "clicked", 
+        G_CALLBACK(check_false_server),mosq_window); 
+        g_signal_connect_swapped( back_window, "clicked", 
+		G_CALLBACK( gtk_widget_destroy), mosq_window );        
+        gtk_widget_set_margin_start ( back_window, 105 );
+        gtk_widget_set_margin_end ( back_window, 75 );
+        gtk_widget_set_margin_top ( back_window, 5 );
+
+        gtk_widget_show_all(mosq_window);
+
+        
+    }
+    else {
+        serverdoit = false;
+        //gtk_widget_destroy(mosq_window);
+        
+
+        GtkWidget *dialog;
+        dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+            GTK_DIALOG_DESTROY_WITH_PARENT,
+            GTK_MESSAGE_ERROR,
+            GTK_BUTTONS_OK,
+            "\n         Error to Open\n Please Save you Server \n             And Exit");
+        gtk_window_set_title(GTK_WINDOW(dialog), "Error");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+
+        }
+
 }
 
 void topic_button( GtkWidget *widget, gpointer data ) {
-    printf("hello\n");
+    
+    printf("Out loop %d",i);
+    if (!topicdoit){
+        topicdoit = true;
+        
+        mosq_window = gtk_application_window_new( app );
+	
+	    gtk_window_set_title( GTK_WINDOW(mosq_window), "Topic" );
+	    gtk_window_set_default_size( GTK_WINDOW(mosq_window), 300, 200 );
+        gtk_window_set_resizable (GTK_WINDOW(mosq_window), FALSE);
+        
+	    gtk_window_set_position( GTK_WINDOW(mosq_window), GTK_WIN_POS_NONE);
+
+        headerbar = gtk_header_bar_new ();
+        gtk_widget_show(headerbar);
+        gtk_window_set_application(GTK_WINDOW(mosq_window), GTK_APPLICATION (app));
+        gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "SMK ");
+        gtk_header_bar_set_subtitle(GTK_HEADER_BAR(headerbar), "Topic");
+        gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), false);
+        gtk_window_set_titlebar (GTK_WINDOW(mosq_window), headerbar);
+
+
+        grid = gtk_grid_new ();
+        gtk_container_add (GTK_CONTAINER (mosq_window), grid);
+        gtk_grid_set_column_spacing ( GTK_GRID ( grid ), 4 );
+        gtk_grid_set_row_spacing ( GTK_GRID ( grid ), 4 );
+
+
+        label_topic = gtk_label_new("Topic");
+        gtk_widget_override_font(label_topic,
+                            pango_font_description_from_string("FreeSerif 20"));
+        gtk_grid_attach (GTK_GRID (grid), label_topic, 0, 0, 1, 1);
+        gtk_widget_set_margin_top ( label_topic, 20 );
+        gtk_widget_set_margin_start ( label_topic, 70 );
+        gtk_widget_set_margin_end ( label_topic, 40 );
+
+
+
+        topic_entry = gtk_entry_new();
+        gtk_entry_set_text(GTK_ENTRY(topic_entry),"-------Input Topic-------");
+        gtk_widget_set_margin_top ( topic_entry, 20 );
+        gtk_grid_attach (GTK_GRID (grid), topic_entry, 0, 1, 1, 1);
+        gtk_widget_set_margin_start ( topic_entry, 70 );
+        gtk_widget_set_margin_end ( topic_entry, 40 );
+        
+
+        server_button1 =  gtk_button_new_with_label( "Save" );
+        gtk_grid_attach (GTK_GRID (grid), server_button1, 0, 2, 1, 1);
+        g_signal_connect(server_button1, "clicked", G_CALLBACK(show_question_topic),mosq_window); 
+        gtk_widget_set_margin_start ( server_button1, 90 );
+        gtk_widget_set_margin_end ( server_button1, 60 );
+        gtk_widget_set_margin_top ( server_button1, 10 );
+
+        back_window = gtk_button_new_with_label( "Back" );
+        gtk_grid_attach (GTK_GRID (grid), back_window, 0, 3, 1, 1);
+        g_signal_connect(back_window, "clicked", 
+        G_CALLBACK(check_false_topic),mosq_window); 
+        g_signal_connect_swapped( back_window, "clicked", 
+		G_CALLBACK( gtk_widget_destroy), mosq_window );        
+        gtk_widget_set_margin_start ( back_window, 105 );
+        gtk_widget_set_margin_end ( back_window, 75 );
+        gtk_widget_set_margin_top ( back_window, 5 );
+        
+        gtk_widget_show_all(mosq_window);
+
+        
+    }
+
+    else {
+        topicdoit = false;
+        gtk_widget_destroy(mosq_window);
+        
+        //i --;
+        
+        printf("Else");
+
+        GtkWidget *dialog;
+        dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+            GTK_DIALOG_DESTROY_WITH_PARENT,
+            GTK_MESSAGE_ERROR,
+            GTK_BUTTONS_OK,
+            "\n        Error to Open\n Please Save you Topic \n            And Exit");
+        gtk_window_set_title(GTK_WINDOW(dialog), "Error");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+
+        }
+
+}
+
+void login_button( GtkWidget *widget, gpointer data ) {
+    
+    printf("Out loop %d",i);
+    if (!topicdoit){
+        topicdoit = true;
+        
+        login_window = gtk_application_window_new( app );
+	
+	    gtk_window_set_title( GTK_WINDOW(login_window), "Login" );
+	    gtk_window_set_default_size( GTK_WINDOW(login_window), 500, 300 );
+        gtk_window_set_resizable (GTK_WINDOW(login_window), FALSE);
+        
+	    gtk_window_set_position( GTK_WINDOW(login_window), GTK_WIN_POS_NONE);
+
+        headerbar = gtk_header_bar_new ();
+        gtk_widget_show(headerbar);
+        gtk_window_set_application(GTK_WINDOW(login_window), GTK_APPLICATION (app));
+        gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "SMK ");
+        gtk_header_bar_set_subtitle(GTK_HEADER_BAR(headerbar), "login");
+        gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), false);
+        gtk_window_set_titlebar (GTK_WINDOW(login_window), headerbar);
+
+
+        grid = gtk_grid_new ();
+        gtk_container_add (GTK_CONTAINER (login_window), grid);
+        gtk_grid_set_column_spacing ( GTK_GRID ( grid ), 5 );
+        gtk_grid_set_row_spacing ( GTK_GRID ( grid ), 5 );
+
+
+        label_login = gtk_label_new("Login");
+        gtk_widget_override_font(label_login,
+                            pango_font_description_from_string("FreeSerif 20"));
+        gtk_grid_attach (GTK_GRID (grid), label_login, 0, 0, 3, 1);
+        gtk_widget_set_margin_top ( label_login, 20 );
+        gtk_widget_set_margin_start ( label_login, 130 );
+        
+
+        label_login = gtk_label_new("User");
+        gtk_widget_override_font(label_login,
+                            pango_font_description_from_string("FreeSerif 14"));
+        gtk_grid_attach (GTK_GRID (grid), label_login, 0, 1, 1, 1);
+        gtk_widget_set_margin_top ( label_login, 20 );
+        gtk_widget_set_margin_start ( label_login, 100 );
+        //gtk_widget_set_margin_end ( label_login, 0 );
+        
+        login_entry = gtk_entry_new();
+        gtk_entry_set_text(GTK_ENTRY(login_entry),"-------User-------");
+        gtk_widget_set_margin_top ( login_entry, 20 );
+        gtk_grid_attach (GTK_GRID (grid), login_entry, 1, 1, 1, 1);
+        gtk_widget_set_margin_start ( login_entry, 10 );
+        //gtk_widget_set_margin_end ( login_entry, 50 );
+
+        label_pass = gtk_label_new("Password");
+        gtk_widget_override_font(label_pass,
+                            pango_font_description_from_string("FreeSerif 14"));
+        gtk_grid_attach (GTK_GRID (grid), label_pass, 0, 2, 1, 1);
+        gtk_widget_set_margin_top ( label_pass, 20 );
+        gtk_widget_set_margin_start ( label_pass, 130 );
+        //gtk_widget_set_margin_end ( label_login, 0 );
+
+        pass_entry = gtk_entry_new();
+        gtk_entry_set_text(GTK_ENTRY(pass_entry),"-------Pass01-------");
+        gtk_widget_set_margin_top ( pass_entry, 20 );
+        gtk_grid_attach (GTK_GRID (grid), pass_entry, 1, 2, 1, 1);
+        gtk_widget_set_margin_start ( pass_entry, 10 );
+        //gtk_widget_set_margin_end ( topic_entry, 130 );
+
+        login_entry = gtk_button_new_with_label( "login" );
+        gtk_grid_attach (GTK_GRID (grid), login_entry, 0, 3, 3, 1);
+        g_signal_connect(login_entry, "clicked", G_CALLBACK(show_question_login),login_window); 
+        gtk_widget_set_margin_start ( login_entry, 180 );
+        gtk_widget_set_margin_end ( login_entry, 60 );
+        gtk_widget_set_margin_top ( login_entry, 20 );
+
+        server_button1 =  gtk_button_new_with_label( "Back" );
+        gtk_grid_attach (GTK_GRID (grid), server_button1, 0, 4, 4, 1);
+        g_signal_connect(server_button1, "clicked", G_CALLBACK(show_question_login),login_window); 
+        gtk_widget_set_margin_top ( server_button1, 20 );
+        gtk_widget_set_margin_start ( server_button1, 200 );
+        gtk_widget_set_margin_end ( server_button1, 90 );
+        
+        
+        gtk_widget_show_all(login_window);
+
+        
+    }
+
+    else {
+        topicdoit = false;
+        gtk_widget_destroy(login_window);
+        
+        //i --;
+        
+        printf("Else");
+
+        GtkWidget *dialog;
+        dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+            GTK_DIALOG_DESTROY_WITH_PARENT,
+            GTK_MESSAGE_ERROR,
+            GTK_BUTTONS_OK,
+            "\n        Error to Open\n Please Save you Topic \n            And Exit");
+        gtk_window_set_title(GTK_WINDOW(dialog), "Error");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+
+        }
+
 }
 
 void activate( GtkApplication *app, gpointer user_data ){
@@ -410,7 +787,7 @@ void activate( GtkApplication *app, gpointer user_data ){
     g_menu_append(mosqmenu, "Server","app.server");
     g_menu_append(mosqmenu, "Topic", "app.topic");
     editmenu = g_menu_new();
-    g_menu_append(editmenu, "Coming soon...","app");
+    g_menu_append(editmenu, "Login","app.login");
     //g_menu_append(editmenu, "_Add", "app.add");
     //g_menu_append(editmenu, "_Delete", "app.delete");
     g_menu_append_section(mosqmenu, NULL, G_MENU_MODEL(editmenu));
@@ -534,7 +911,7 @@ void sub_activate( GtkApplication *app, gpointer user_data ) {
     }
     else{
 
-        gtk_label_set_text(GTK_LABEL(main_status),"• Disonnect");
+        gtk_label_set_text(GTK_LABEL(main_status),"• Disconnect");
         gtk_widget_override_font(main_status,
                             pango_font_description_from_string("Monospace 10"));
 
@@ -553,87 +930,143 @@ void main_activate( GtkApplication *app, gpointer user_data ) {
     gtk_grid_set_column_spacing ( GTK_GRID ( grid ), 3 );
     gtk_grid_set_row_spacing ( GTK_GRID ( grid ), 3 );
 
+    head_label = gtk_label_new(" Server Cam");
+    gtk_widget_override_font(head_label,
+                            pango_font_description_from_string("FreeSerif 30"));
+    gtk_grid_attach (GTK_GRID (grid), head_label, 3, 0, 3, 1);
+    gtk_widget_set_margin_top ( head_label, 5 );
+    gtk_widget_set_margin_start ( head_label, 0 );
+    gtk_widget_set_margin_end ( head_label, 0 );
+
 	pic_box1 = gtk_event_box_new();
     gtk_widget_set_size_request(pic_box1,576,432);
 
 	img1 = gtk_image_new_from_file("cam1_06-10-2021_21-31-23.jpg");
 	gtk_container_add(GTK_CONTAINER(pic_box1), img1);
-  	gtk_grid_attach (GTK_GRID (grid), pic_box1, 0, 0, 3, 1);
-    gtk_widget_set_margin_top ( img1 , 20 );
+  	gtk_grid_attach (GTK_GRID (grid), pic_box1, 0, 1, 3, 1);
+    gtk_widget_set_margin_top ( pic_box1, 10 );
+    gtk_widget_set_margin_start ( pic_box1, 8 );
+    gtk_widget_set_margin_end ( pic_box1, 0 );
 
 	pic_box2 = gtk_event_box_new();
     gtk_widget_set_size_request(pic_box2,576,432);
 
 	img2 = gtk_image_new_from_file("cam1_06-10-2021_21-31-23.jpg");
 	gtk_container_add(GTK_CONTAINER(pic_box2), img2);
-    gtk_grid_attach (GTK_GRID (grid), pic_box2, 3, 0, 3, 1);
-    gtk_widget_set_margin_top ( img2 , 20 );
+    gtk_grid_attach (GTK_GRID (grid), pic_box2, 3, 1, 3, 1);
+    gtk_widget_set_margin_top ( pic_box2 , 10 );
 
 	pic_box3 = gtk_event_box_new();
     gtk_widget_set_size_request(pic_box3,576,432);
 
 	img3 = gtk_image_new_from_file("cam1_06-10-2021_21-31-23.jpg");
 	gtk_container_add(GTK_CONTAINER(pic_box3), img3);
-    gtk_grid_attach (GTK_GRID (grid), pic_box3, 6, 0, 3, 1);
-    gtk_widget_set_margin_top ( img3 , 20 );
+    gtk_grid_attach (GTK_GRID (grid), pic_box3, 6, 1, 3, 1);
+    gtk_widget_set_margin_top ( pic_box3 , 10 );
 
 	main_label1 = gtk_label_new_with_mnemonic( cam_id1 );
     gtk_widget_override_font(main_label1,
-                            pango_font_description_from_string("Tahoma 20"));
-    gtk_widget_set_size_request(main_label1,260,40);
-    gtk_grid_attach (GTK_GRID (grid), main_label1, 1, 1, 1, 1);
+                            pango_font_description_from_string("FreeSans 22"));
+    //gtk_widget_set_size_request(main_label1,260,40);
+    gtk_grid_attach (GTK_GRID (grid), main_label1, 0, 2, 1, 1);
     gtk_widget_set_margin_top ( main_label1 , 20 );
+    gtk_widget_set_margin_start ( main_label1 , 105 );
+
 
 	main_label2 = gtk_label_new_with_mnemonic( cam_id2 );
     gtk_widget_override_font(main_label2,
-                            pango_font_description_from_string("Tahoma 20"));
+                            pango_font_description_from_string("FreeSans 22"));
     gtk_widget_set_size_request(main_label2,260,40);
-    gtk_grid_attach (GTK_GRID (grid), main_label2, 4, 1, 1, 1);
+    gtk_grid_attach (GTK_GRID (grid), main_label2, 4, 2, 1, 1);
     gtk_widget_set_margin_top ( main_label2 , 20 );
 
 	main_label3 = gtk_label_new_with_mnemonic( cam_id3 );
     gtk_widget_override_font(main_label3,
-                            pango_font_description_from_string("Tahoma 20"));
+                            pango_font_description_from_string("FreeSans 22"));
     gtk_widget_set_size_request(main_label3,260,40);
-    gtk_grid_attach (GTK_GRID (grid), main_label3, 7, 1, 1, 1);
+    gtk_grid_attach (GTK_GRID (grid), main_label3, 7, 2, 1, 1);
     gtk_widget_set_margin_top ( main_label3 , 20 );
+    gtk_widget_set_margin_start ( main_label3 , 30 );
 
 	main_label4 = gtk_label_new_with_mnemonic("00-00-00");
     gtk_widget_override_font(main_label4,
-                            pango_font_description_from_string("Tahoma 20"));
+                            pango_font_description_from_string("FreeSans 18"));
     gtk_widget_set_size_request(main_label4,260,40);
-    gtk_grid_attach (GTK_GRID (grid), main_label4, 1, 2, 1, 1);
+    gtk_grid_attach (GTK_GRID (grid), main_label4, 0, 3, 1, 1);
+    gtk_widget_set_margin_top ( main_label4 , 10 );
+    gtk_widget_set_margin_start ( main_label4 , 105 );
     
 	main_label5 = gtk_label_new_with_mnemonic("00-00-00");
     gtk_widget_override_font(main_label5,
-                            pango_font_description_from_string("Tahoma 20"));
+                            pango_font_description_from_string("FreeSans 18"));
     gtk_widget_set_size_request(main_label5,260,40);
-    gtk_grid_attach (GTK_GRID (grid), main_label5, 4, 2, 1, 1);
+    gtk_grid_attach (GTK_GRID (grid), main_label5, 4, 3, 1, 1);
+    gtk_widget_set_margin_top ( main_label5 , 10 );
 
 	main_label6 = gtk_label_new_with_mnemonic("00-00-00");
     gtk_widget_override_font(main_label6,
-                            pango_font_description_from_string("Tahoma 20"));
+                            pango_font_description_from_string("FreeSans 18"));
     gtk_widget_set_size_request(main_label6,260,40);
-    gtk_grid_attach (GTK_GRID (grid), main_label6, 7, 2, 1, 1);
+    gtk_grid_attach (GTK_GRID (grid), main_label6, 7, 3, 1, 1);
+    gtk_widget_set_margin_top ( main_label6 , 10 );
+    gtk_widget_set_margin_start ( main_label6 , 30 );
     
     main_button1 = gtk_button_new_with_label( "Stop" );
     g_signal_connect( main_button1, "clicked",
 		G_CALLBACK(main_button1_callback), main_button1 );
+    gtk_widget_override_font(main_button1,
+                            pango_font_description_from_string("FreeSans,Bold 12"));
     gtk_grid_attach (GTK_GRID (grid), main_button1, 4, 5, 1, 1);
+    gtk_widget_set_margin_top ( main_button1, 40 );
+    gtk_widget_set_margin_start ( main_button1, 0 );
+    gtk_widget_set_margin_end ( main_button1, 0 );
+
 
     main_button3 = gtk_button_new_with_label( "Back" );
     g_signal_connect( main_button3, "clicked",
 		G_CALLBACK(main_button2_callback), main_button3 );
+    gtk_widget_override_font(main_button3,
+                            pango_font_description_from_string("FreeSans,Bold 12"));
     gtk_grid_attach (GTK_GRID (grid), main_button3, 5, 5, 1, 1);
+    gtk_widget_set_margin_top ( main_button3, 40 );
+    gtk_widget_set_margin_start ( main_button3, 0 );
+    gtk_widget_set_margin_end ( main_button3, 0 );
+
+    label_sever = gtk_label_new("Server : 26.90.194.251 ");
+    gtk_widget_override_font(label_sever,
+                            pango_font_description_from_string("Monospace 9"));
+    gtk_grid_attach (GTK_GRID (grid), label_sever, 0, 6, 1, 1);
+    gtk_widget_set_margin_top ( label_sever, 50 );
+    gtk_widget_set_margin_start ( label_sever, 0 );
+    gtk_widget_set_margin_end ( label_sever, 240 );
+    
+
+    label_topic = gtk_label_new(" Topic  : KJPIE");
+    gtk_widget_override_font(label_topic,
+                            pango_font_description_from_string("Monospace 9"));
+    gtk_grid_attach (GTK_GRID (grid), label_topic, 0, 7, 1, 1);
+    gtk_widget_set_margin_top ( label_topic, 0 );
+    gtk_widget_set_margin_start ( label_topic, 0 );
+    gtk_widget_set_margin_end ( label_topic, 310 );
+    
+
 
     main_status = gtk_label_new_with_mnemonic("");
-    gtk_grid_attach (GTK_GRID (grid), main_status, 8, 4, 1, 1);
+    gtk_grid_attach (GTK_GRID (grid), main_status, 8, 6, 1, 1);
+    gtk_widget_set_margin_top ( main_status, 60 );
+    gtk_widget_set_margin_start ( main_status, 0 );
+    gtk_widget_set_margin_end ( main_status, 0 );
+    
 
     if(is_connected){
         gtk_label_set_text(GTK_LABEL(main_status),"• Connect");
+        gtk_widget_override_font(main_status,
+                            pango_font_description_from_string("Monospace 9"));
     }
     else{
-        gtk_label_set_text(GTK_LABEL(main_status),"• Disonnect");
+        gtk_label_set_text(GTK_LABEL(main_status),"• Disconnect");
+        gtk_widget_override_font(main_status,
+                            pango_font_description_from_string("Monospace 9"));
     }
 
 	gtk_widget_show_all(window);
@@ -644,7 +1077,8 @@ static gboolean name_pic( gpointer data ) {
 
 	if(counter_enabled)
 	{
-		if(strstr(sub_text,cam_id1))
+        //printf("camid1 = %s\n",cid1);
+		if(strstr(sub_text,cid1))
         {   
 			strcpy(temp_str,sub_text);
 			sp_cam = strtok(temp_str,"_");
@@ -652,7 +1086,7 @@ static gboolean name_pic( gpointer data ) {
             sprintf(lebel_cam,"%s_%s",sp_cam,strtok(NULL,"_"));
 
             gtk_widget_override_font(main_label4,
-                                pango_font_description_from_string("Tahoma 20"));
+                                pango_font_description_from_string("FreeSans 18"));
             gtk_label_set_text(GTK_LABEL(main_label4),lebel_cam);
 			/* cam1_25-09-2021_17-14-49 */
 
@@ -661,7 +1095,7 @@ static gboolean name_pic( gpointer data ) {
 			gtk_image_set_from_file(GTK_IMAGE(img1), temp_str);			
 
         }
-		if(strstr(sub_text,cam_id2))
+		if(strstr(sub_text,cid2))
         {   
 			strcpy(temp_str,sub_text);
 			sp_cam = strtok(temp_str,"_");
@@ -669,7 +1103,7 @@ static gboolean name_pic( gpointer data ) {
             sprintf(lebel_cam,"%s_%s",sp_cam,strtok(NULL,"_"));
 
             gtk_widget_override_font(main_label5,
-                                pango_font_description_from_string("Tahoma 20"));
+                                pango_font_description_from_string("FreeSans 18"));
             gtk_label_set_text(GTK_LABEL(main_label5),lebel_cam);
 			
             sprintf(temp_str,"sub_img/%s.jpg",sub_text);
@@ -677,7 +1111,7 @@ static gboolean name_pic( gpointer data ) {
 			gtk_image_set_from_file(GTK_IMAGE(img2), temp_str);
 			
         }
-		if(strstr(sub_text,cam_id3))
+		if(strstr(sub_text,cid3))
         {   
 			strcpy(temp_str,sub_text);
 			sp_cam = strtok(temp_str,"_");
@@ -685,7 +1119,7 @@ static gboolean name_pic( gpointer data ) {
             sprintf(lebel_cam,"%s_%s",sp_cam,strtok(NULL,"_"));
 
             gtk_widget_override_font(main_label6,
-                                pango_font_description_from_string("Tahoma 20"));
+                                pango_font_description_from_string("FreeSans 18"));
             gtk_label_set_text(GTK_LABEL(main_label6),lebel_cam);
 
             sprintf(temp_str,"sub_img/%s.jpg",sub_text);
@@ -698,7 +1132,6 @@ static gboolean name_pic( gpointer data ) {
 
 	return TRUE; 
 }
-
 
 GtkTreeModel *create_model() {
 
@@ -804,6 +1237,3 @@ void add_columns (GtkTreeView *treeview) {
     gtk_tree_view_append_column (treeview, column);
   
 }
-
-
-
