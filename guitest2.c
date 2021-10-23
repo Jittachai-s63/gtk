@@ -20,7 +20,8 @@ gcc -g guitest2.c -o guitest2 -lmosquitto -lpthread  \
 
 GtkApplication *app;
 GtkWidget *window, *pic_window ,*tree_window,*mosq_window,*login_window;
-GtkWidget *headerbar , *tree_headerbar;
+GtkWidget *del_window ;
+GtkWidget *headerbar , *tree_headerbar , *del_headerbar;
 GtkWidget *head_button1 ;
 
 GtkTreeModel *model = NULL;
@@ -47,8 +48,10 @@ GtkWidget *main_status ;
 GtkWidget *main_button1, *main_button2 ,*main_button3 ;
 
 GtkWidget *server_button1;
-///
-GtkWidget *login_entry,*pass_entry,*label_sever,*label_login,*label_pass,*back_window,*login_entry;
+GtkWidget *user_entry,*pass_entry ;
+GtkWidget *login_button1,*label_sever,*label_login,*label_pass,*back_window;
+
+
 
 static gboolean counter_enabled = FALSE;
 static gboolean tree_stat = FALSE;
@@ -58,11 +61,14 @@ bool clean_session = true;
 struct mosquitto *mosq = NULL;
 
 char *text_entry1,*text_entry2,*text_entry3;
+char *user_text , *pass_text ;
 char *sp_cam,temp_str[100],lebel_cam[100] ;
 char cam_id1[100], cam_id2[100], cam_id3[100];
 char cid1[100],cid2[100],cid3[100] ;
+char del_text[100] ;
 
 int i = 0;
+int run_line ;
 
 
 void head_button1_callback( GtkWidget* , gpointer ) ;
@@ -77,6 +83,12 @@ void sub_button1_callback( GtkWidget* , gpointer ) ;
 void server_button( GtkWidget* , gpointer ) ;
 void topic_button( GtkWidget* , gpointer ) ;
 void login_button( GtkWidget* , gpointer ) ;
+void del_button1_callback( GtkWidget* , gpointer ) ;
+void del_button2_callback( GtkWidget* , gpointer ) ;
+void remove_item(GSimpleAction *, GVariant *, gpointer ) ;
+
+void login_button1_callback( GtkWidget* , gpointer ) ;
+void make_del_tree() ;
 
 void activate( GtkApplication* , gpointer ) ;
 void sub_activate( GtkApplication* , gpointer ) ;
@@ -84,7 +96,7 @@ void main_activate( GtkApplication*, gpointer ) ;
 
 static gboolean name_pic( gpointer );
 
-GtkTreeModel *create_model () ;
+
 void add_columns (GtkTreeView *) ;
 
 
@@ -96,6 +108,14 @@ typedef struct {
 
 } student;
 
+GtkTreeModel *create_model (student * ) ;
+
+typedef struct {
+
+    char allText[100];
+
+}text_alldate ;
+
 enum {
 
   COLUMN_DATE,
@@ -104,7 +124,7 @@ enum {
   NUM_COLUMNS
 
 };
-student text_data[1000] ;
+
 
 const GActionEntry app_actions[] = {
     { "server", server_button },
@@ -244,7 +264,7 @@ void head_button1_callback( GtkWidget *widget, gpointer data ) {
     if(win_stat){
 
         if(tree_stat){
-        gtk_widget_destroy(tree_window);
+        //gtk_widget_destroy(tree_window);
         }
 
         tree_stat = TRUE;
@@ -283,7 +303,39 @@ void head_button1_callback( GtkWidget *widget, gpointer data ) {
                                         GTK_POLICY_AUTOMATIC);
         gtk_box_pack_start (GTK_BOX (box), sw, TRUE, TRUE, 0);
 
-        model = create_model ();
+        FILE *fp;
+        char * line = NULL;
+        size_t len = 0;
+        ssize_t read;
+        student text_data[1000] ;
+        
+        run_line=0 ;
+        fp = fopen("data.txt","r");
+        
+        while ((read = getline(&line, &len, fp)) != -1) {
+
+            char cp_text[100] ;
+            char *sp_text;
+            strcpy(cp_text,line);
+            sp_text = strtok(cp_text,"\n");
+            strcpy(cp_text,sp_text);
+            
+            sp_text = strtok(cp_text,"_");
+            strcpy(text_data[run_line].iD,sp_text);
+
+            sp_text = strtok(NULL,"_");
+            strcpy(text_data[run_line].inDate,sp_text);
+
+            sp_text = strtok(NULL,"_");
+            strcpy(text_data[run_line].Time,sp_text);
+
+            run_line++;
+
+        }
+
+        fclose(fp);
+
+        model = create_model (text_data);
 
         /* create tree view */
         treeview = gtk_tree_view_new_with_model (model);
@@ -317,17 +369,48 @@ void tree_button_callback( GtkWidget *widget, gpointer data ) {
                                         GTK_POLICY_AUTOMATIC);
         gtk_box_pack_start (GTK_BOX (box), sw, TRUE, TRUE, 0);
 
-    model = create_model ();
+    FILE *fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    student temp_data[1000];
 
-    /* create tree view */
+    run_line=0 ;
+    fp = fopen("data.txt","r");
+        
+    while ((read = getline(&line, &len, fp)) != -1) {
+
+        char cp_text[100] ;
+        char *sp_text;
+        strcpy(cp_text,line);
+        sp_text = strtok(cp_text,"\n");
+        strcpy(cp_text,sp_text);
+            
+        sp_text = strtok(cp_text,"_");
+        strcpy(temp_data[run_line].iD,sp_text);
+
+        sp_text = strtok(NULL,"_");
+        strcpy(temp_data[run_line].inDate,sp_text);
+
+        sp_text = strtok(NULL,"_");
+        strcpy(temp_data[run_line].Time,sp_text);
+
+        run_line++;
+
+    }
+
+    fclose(fp);
+
+    model = create_model (temp_data);
+
+    
     treeview = gtk_tree_view_new_with_model (model);
-    //gtk_tree_view_set_search_column (GTK_TREE_VIEW (treeview),
-    //                                COLUMN_DATE);
+
     gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(treeview)),
                             GTK_SELECTION_SINGLE);
     g_object_unref (model);
     gtk_container_add (GTK_CONTAINER (sw), treeview);
-        /* add columns to the tree view */
+
     add_columns (GTK_TREE_VIEW (treeview));
 
     g_signal_connect(treeview, "row-activated", 
@@ -399,12 +482,13 @@ static void show_question(GtkWidget *widget, gpointer mosq_window) {
   if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
     g_print( "Exit..." );
     serverdoit = false;
-    //gtk_widget_destroy(window);
     gtk_widget_destroy(mosq_window);
     
      
+   } else {
+       gtk_widget_destroy(dialog);
    }
-  gtk_widget_destroy(dialog);
+  
 
   
 }
@@ -430,7 +514,6 @@ static void show_question_topic(GtkWidget *widget, gpointer mosq_window) {
     
      
    }
-  gtk_widget_destroy(dialog);
 
   
 }
@@ -456,13 +539,14 @@ static void show_question_login(GtkWidget *widget, gpointer login_window) {
     
      
    }
-  gtk_widget_destroy(dialog);
+  
 
   
 }
 
 static void check_false_server(GtkWidget *widget, gpointer mosq_window) {
     serverdoit = false;
+    gtk_widget_destroy(mosq_window);
 }
 
 static void check_false_topic(GtkWidget *widget, gpointer mosq_window) {
@@ -471,13 +555,11 @@ static void check_false_topic(GtkWidget *widget, gpointer mosq_window) {
 
 void server_button( GtkWidget *widget, gpointer data ) {
     
-    printf("Out loop %d",i);
+    GtkWidget *grid_dlc ;
+    //printf("Out loop %d",i);
     if (!serverdoit){
-    //if (i == 0){
+    
         serverdoit = true;
-        //printf("hi\n");
-        //i ++;
-        //printf("if %d \n",i);
         
         mosq_window = gtk_application_window_new( app );
 	
@@ -496,16 +578,16 @@ void server_button( GtkWidget *widget, gpointer data ) {
         gtk_window_set_titlebar (GTK_WINDOW(mosq_window), headerbar);
 
 
-        grid = gtk_grid_new ();
-        gtk_container_add (GTK_CONTAINER (mosq_window), grid);
-        gtk_grid_set_column_spacing ( GTK_GRID ( grid ), 4 );
-        gtk_grid_set_row_spacing ( GTK_GRID ( grid ), 4 );
+        grid_dlc = gtk_grid_new ();
+        gtk_container_add (GTK_CONTAINER (mosq_window), grid_dlc);
+        gtk_grid_set_column_spacing ( GTK_GRID ( grid_dlc ), 4 );
+        gtk_grid_set_row_spacing ( GTK_GRID ( grid_dlc ), 4 );
 
 
         label_sever = gtk_label_new("Server");
         gtk_widget_override_font(label_sever,
                             pango_font_description_from_string("FreeSerif 20"));
-        gtk_grid_attach (GTK_GRID (grid), label_sever, 0, 0, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), label_sever, 0, 0, 1, 1);
         gtk_widget_set_margin_top ( label_sever, 20 );
         gtk_widget_set_margin_start ( label_sever, 70 );
         gtk_widget_set_margin_end ( label_sever, 40 );
@@ -514,24 +596,26 @@ void server_button( GtkWidget *widget, gpointer data ) {
         server_entry = gtk_entry_new();
         gtk_entry_set_text(GTK_ENTRY(server_entry),"------Input Server------");
         gtk_widget_set_margin_top ( server_entry, 20 );
-        gtk_grid_attach (GTK_GRID (grid), server_entry, 0, 1, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), server_entry, 0, 1, 1, 1);
         gtk_widget_set_margin_start ( server_entry, 70 );
         gtk_widget_set_margin_end ( server_entry, 40 );
         
         server_button1 =  gtk_button_new_with_label( "Save" );
-        gtk_grid_attach (GTK_GRID (grid), server_button1, 0, 2, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), server_button1, 0, 2, 1, 1);
         g_signal_connect(server_button1, "clicked", G_CALLBACK(show_question),mosq_window); 
         gtk_widget_set_margin_start ( server_button1, 90 );
         gtk_widget_set_margin_end ( server_button1, 60 );
         gtk_widget_set_margin_top ( server_button1, 10 );
         
         back_window = gtk_button_new_with_label( "Back" );
-        gtk_grid_attach (GTK_GRID (grid), back_window, 0, 3, 1, 1);
-        gtk_grid_attach (GTK_GRID (grid), server_button1, 0, 2, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), back_window, 0, 3, 1, 1);
+        
         g_signal_connect(back_window, "clicked", 
-        G_CALLBACK(check_false_server),mosq_window); 
-        g_signal_connect_swapped( back_window, "clicked", 
-		G_CALLBACK( gtk_widget_destroy), mosq_window );        
+                    G_CALLBACK(check_false_server),mosq_window); 
+
+        //g_signal_connect_swapped( back_window, "clicked", 
+		//            G_CALLBACK( gtk_widget_destroy), mosq_window );
+
         gtk_widget_set_margin_start ( back_window, 105 );
         gtk_widget_set_margin_end ( back_window, 75 );
         gtk_widget_set_margin_top ( back_window, 5 );
@@ -541,6 +625,10 @@ void server_button( GtkWidget *widget, gpointer data ) {
         
     }
     else {
+        gtk_widget_destroy(mosq_window);
+        serverdoit = false;
+        server_button(mosq_window,NULL);
+        /*
         serverdoit = false;
         //gtk_widget_destroy(mosq_window);
         
@@ -554,14 +642,15 @@ void server_button( GtkWidget *widget, gpointer data ) {
         gtk_window_set_title(GTK_WINDOW(dialog), "Error");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
-
+        */
         }
 
 }
 
 void topic_button( GtkWidget *widget, gpointer data ) {
     
-    printf("Out loop %d",i);
+    GtkWidget *grid_dlc ;
+    //printf("Out loop %d",i);
     if (!topicdoit){
         topicdoit = true;
         
@@ -582,16 +671,16 @@ void topic_button( GtkWidget *widget, gpointer data ) {
         gtk_window_set_titlebar (GTK_WINDOW(mosq_window), headerbar);
 
 
-        grid = gtk_grid_new ();
-        gtk_container_add (GTK_CONTAINER (mosq_window), grid);
-        gtk_grid_set_column_spacing ( GTK_GRID ( grid ), 4 );
-        gtk_grid_set_row_spacing ( GTK_GRID ( grid ), 4 );
+        grid_dlc = gtk_grid_new ();
+        gtk_container_add (GTK_CONTAINER (mosq_window), grid_dlc);
+        gtk_grid_set_column_spacing ( GTK_GRID ( grid_dlc ), 4 );
+        gtk_grid_set_row_spacing ( GTK_GRID ( grid_dlc ), 4 );
 
 
         label_topic = gtk_label_new("Topic");
         gtk_widget_override_font(label_topic,
                             pango_font_description_from_string("FreeSerif 20"));
-        gtk_grid_attach (GTK_GRID (grid), label_topic, 0, 0, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), label_topic, 0, 0, 1, 1);
         gtk_widget_set_margin_top ( label_topic, 20 );
         gtk_widget_set_margin_start ( label_topic, 70 );
         gtk_widget_set_margin_end ( label_topic, 40 );
@@ -601,20 +690,20 @@ void topic_button( GtkWidget *widget, gpointer data ) {
         topic_entry = gtk_entry_new();
         gtk_entry_set_text(GTK_ENTRY(topic_entry),"-------Input Topic-------");
         gtk_widget_set_margin_top ( topic_entry, 20 );
-        gtk_grid_attach (GTK_GRID (grid), topic_entry, 0, 1, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), topic_entry, 0, 1, 1, 1);
         gtk_widget_set_margin_start ( topic_entry, 70 );
         gtk_widget_set_margin_end ( topic_entry, 40 );
         
 
         server_button1 =  gtk_button_new_with_label( "Save" );
-        gtk_grid_attach (GTK_GRID (grid), server_button1, 0, 2, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), server_button1, 0, 2, 1, 1);
         g_signal_connect(server_button1, "clicked", G_CALLBACK(show_question_topic),mosq_window); 
         gtk_widget_set_margin_start ( server_button1, 90 );
         gtk_widget_set_margin_end ( server_button1, 60 );
         gtk_widget_set_margin_top ( server_button1, 10 );
 
         back_window = gtk_button_new_with_label( "Back" );
-        gtk_grid_attach (GTK_GRID (grid), back_window, 0, 3, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), back_window, 0, 3, 1, 1);
         g_signal_connect(back_window, "clicked", 
         G_CALLBACK(check_false_topic),mosq_window); 
         g_signal_connect_swapped( back_window, "clicked", 
@@ -652,7 +741,8 @@ void topic_button( GtkWidget *widget, gpointer data ) {
 
 void login_button( GtkWidget *widget, gpointer data ) {
     
-    printf("Out loop %d",i);
+    GtkWidget *grid_dlc ;
+    //printf("Out loop %d",i);
     if (!topicdoit){
         topicdoit = true;
         
@@ -673,16 +763,16 @@ void login_button( GtkWidget *widget, gpointer data ) {
         gtk_window_set_titlebar (GTK_WINDOW(login_window), headerbar);
 
 
-        grid = gtk_grid_new ();
-        gtk_container_add (GTK_CONTAINER (login_window), grid);
-        gtk_grid_set_column_spacing ( GTK_GRID ( grid ), 5 );
-        gtk_grid_set_row_spacing ( GTK_GRID ( grid ), 5 );
+        grid_dlc = gtk_grid_new ();
+        gtk_container_add (GTK_CONTAINER (login_window), grid_dlc);
+        gtk_grid_set_column_spacing ( GTK_GRID ( grid_dlc ), 5 );
+        gtk_grid_set_row_spacing ( GTK_GRID ( grid_dlc ), 5 );
 
 
         label_login = gtk_label_new("Login");
         gtk_widget_override_font(label_login,
                             pango_font_description_from_string("FreeSerif 20"));
-        gtk_grid_attach (GTK_GRID (grid), label_login, 0, 0, 3, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), label_login, 0, 0, 3, 1);
         gtk_widget_set_margin_top ( label_login, 20 );
         gtk_widget_set_margin_start ( label_login, 130 );
         
@@ -690,22 +780,22 @@ void login_button( GtkWidget *widget, gpointer data ) {
         label_login = gtk_label_new("User");
         gtk_widget_override_font(label_login,
                             pango_font_description_from_string("FreeSerif 14"));
-        gtk_grid_attach (GTK_GRID (grid), label_login, 0, 1, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), label_login, 0, 1, 1, 1);
         gtk_widget_set_margin_top ( label_login, 20 );
         gtk_widget_set_margin_start ( label_login, 100 );
         //gtk_widget_set_margin_end ( label_login, 0 );
         
-        login_entry = gtk_entry_new();
-        gtk_entry_set_text(GTK_ENTRY(login_entry),"-------User-------");
-        gtk_widget_set_margin_top ( login_entry, 20 );
-        gtk_grid_attach (GTK_GRID (grid), login_entry, 1, 1, 1, 1);
-        gtk_widget_set_margin_start ( login_entry, 10 );
-        //gtk_widget_set_margin_end ( login_entry, 50 );
+        user_entry = gtk_entry_new();
+        gtk_entry_set_text(GTK_ENTRY(user_entry),"-------User-------");
+        gtk_widget_set_margin_top ( user_entry, 20 );
+        gtk_grid_attach (GTK_GRID (grid_dlc), user_entry, 1, 1, 1, 1);
+        gtk_widget_set_margin_start ( user_entry, 10 );
+        //gtk_widget_set_margin_end ( user_entry, 50 );
 
         label_pass = gtk_label_new("Password");
         gtk_widget_override_font(label_pass,
                             pango_font_description_from_string("FreeSerif 14"));
-        gtk_grid_attach (GTK_GRID (grid), label_pass, 0, 2, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), label_pass, 0, 2, 1, 1);
         gtk_widget_set_margin_top ( label_pass, 20 );
         gtk_widget_set_margin_start ( label_pass, 130 );
         //gtk_widget_set_margin_end ( label_login, 0 );
@@ -713,20 +803,32 @@ void login_button( GtkWidget *widget, gpointer data ) {
         pass_entry = gtk_entry_new();
         gtk_entry_set_text(GTK_ENTRY(pass_entry),"-------Pass01-------");
         gtk_widget_set_margin_top ( pass_entry, 20 );
-        gtk_grid_attach (GTK_GRID (grid), pass_entry, 1, 2, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), pass_entry, 1, 2, 1, 1);
         gtk_widget_set_margin_start ( pass_entry, 10 );
         //gtk_widget_set_margin_end ( topic_entry, 130 );
 
-        login_entry = gtk_button_new_with_label( "login" );
-        gtk_grid_attach (GTK_GRID (grid), login_entry, 0, 3, 3, 1);
-        g_signal_connect(login_entry, "clicked", G_CALLBACK(show_question_login),login_window); 
-        gtk_widget_set_margin_start ( login_entry, 180 );
-        gtk_widget_set_margin_end ( login_entry, 60 );
-        gtk_widget_set_margin_top ( login_entry, 20 );
+        login_button1 = gtk_button_new_with_label( "login" );
+        gtk_grid_attach (GTK_GRID (grid_dlc), login_button1, 0, 3, 3, 1);
+
+        g_signal_connect(login_button1, "clicked", 
+                    G_CALLBACK(login_button1_callback),login_window); 
+        
+        g_signal_connect(pass_entry, "activate", 
+                    G_CALLBACK(login_button1_callback),pass_entry);
+
+        gtk_widget_set_margin_start ( login_button1, 180 );
+        gtk_widget_set_margin_end ( login_button1, 60 );
+        gtk_widget_set_margin_top ( login_button1, 20 );
 
         server_button1 =  gtk_button_new_with_label( "Back" );
-        gtk_grid_attach (GTK_GRID (grid), server_button1, 0, 4, 4, 1);
-        g_signal_connect(server_button1, "clicked", G_CALLBACK(show_question_login),login_window); 
+        gtk_grid_attach (GTK_GRID (grid_dlc), server_button1, 0, 4, 4, 1);
+        
+        g_signal_connect(server_button1, "clicked", 
+                    G_CALLBACK(check_false_topic),login_window); 
+        
+        g_signal_connect_swapped( server_button1, "clicked", 
+		            G_CALLBACK( gtk_widget_destroy), login_window );
+
         gtk_widget_set_margin_top ( server_button1, 20 );
         gtk_widget_set_margin_start ( server_button1, 200 );
         gtk_widget_set_margin_end ( server_button1, 90 );
@@ -734,30 +836,340 @@ void login_button( GtkWidget *widget, gpointer data ) {
         
         gtk_widget_show_all(login_window);
 
-        
     }
 
     else {
         topicdoit = false;
         gtk_widget_destroy(login_window);
+        login_button(login_window,NULL);
         
-        //i --;
-        
-        printf("Else");
+        }
+
+}
+
+void login_button1_callback( GtkWidget *widget, gpointer data ) {
+    user_text = gtk_entry_get_text (GTK_ENTRY (user_entry));
+    pass_text = gtk_entry_get_text (GTK_ENTRY (pass_entry));
+    
+    if( !(strcmp(user_text,"admin")) && !(strcmp(pass_text,"12345")) ){
+        printf("u= %s\np = %s\n",user_text,pass_text);
+        gtk_widget_destroy(login_window);
+        topicdoit = false;
+        make_del_tree();
+
+    }
+    else{
 
         GtkWidget *dialog;
-        dialog = gtk_message_dialog_new(GTK_WINDOW(window),
-            GTK_DIALOG_DESTROY_WITH_PARENT,
-            GTK_MESSAGE_ERROR,
-            GTK_BUTTONS_OK,
-            "\n        Error to Open\n Please Save you Topic \n            And Exit");
+
+        dialog = gtk_message_dialog_new(GTK_WINDOW(login_window),
+                                        GTK_DIALOG_DESTROY_WITH_PARENT,
+                                        GTK_MESSAGE_INFO,
+                                        GTK_BUTTONS_CLOSE,
+                                        "\nInvalid username or password" );
+
+        gtk_window_set_title(GTK_WINDOW(dialog), "Error");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+    }
+}
+
+void make_del_tree() {
+
+    GtkWidget *del_button1 , *del_button2 ;
+    GtkWidget *del_box ,*del_sw, *del_hbox ;
+    GtkWidget *del_tree ;
+    GtkTreeModel *del_model = NULL;
+
+
+    del_window = gtk_application_window_new( app );
+    gtk_window_set_title( GTK_WINDOW(del_window), "Del" );
+    gtk_window_set_default_size( GTK_WINDOW(del_window), 320, 480 );
+    gtk_window_set_position( GTK_WINDOW(del_window), GTK_WIN_POS_CENTER );
+
+    del_headerbar = gtk_header_bar_new ();
+    gtk_widget_show(del_headerbar);
+    gtk_window_set_application(GTK_WINDOW(del_window), GTK_APPLICATION (app));
+    gtk_header_bar_set_title(GTK_HEADER_BAR(del_headerbar), "ADMIN ");
+    gtk_header_bar_set_subtitle(GTK_HEADER_BAR(del_headerbar), "Demo Application");
+    gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(del_headerbar), TRUE);
+    gtk_window_set_titlebar (GTK_WINDOW(del_window), del_headerbar);
+
+    del_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add(GTK_CONTAINER(del_window), del_box);
+
+    del_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_end(GTK_BOX(del_box), del_hbox,FALSE , TRUE , 0);
+
+    del_button2 = gtk_button_new_with_label("DELETE ALL");
+    gtk_box_pack_end( GTK_BOX(del_hbox), del_button2,TRUE , TRUE , 0 );
+    g_signal_connect( del_button2, "clicked", 
+        G_CALLBACK(del_button2_callback), NULL );
+
+    del_button1 = gtk_button_new_with_label("Delete");
+    gtk_box_pack_start( GTK_BOX(del_hbox), del_button1,TRUE , TRUE , 0 );
+    
+
+    del_sw = gtk_scrolled_window_new (NULL, NULL);
+    gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (del_sw),
+                                            GTK_SHADOW_ETCHED_IN);
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (del_sw),
+                                        GTK_POLICY_NEVER,
+                                        GTK_POLICY_AUTOMATIC);
+    gtk_box_pack_start (GTK_BOX (del_box), del_sw, TRUE, TRUE, 0);
+
+    FILE *fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    student text_data[1000] ;
+
+    run_line=0 ;
+    fp = fopen("all_data.txt","r");
+        
+    while ((read = getline(&line, &len, fp)) != -1) {
+
+        char cp_text[100] ;
+        char *sp_text;
+        strcpy(cp_text,line);
+        sp_text = strtok(cp_text,"\n");
+        strcpy(cp_text,sp_text);
+            
+        sp_text = strtok(cp_text,"_");
+        strcpy(text_data[run_line].iD,sp_text);
+
+        sp_text = strtok(NULL,"_");
+        strcpy(text_data[run_line].inDate,sp_text);
+
+        sp_text = strtok(NULL,"_");
+        strcpy(text_data[run_line].Time,sp_text);
+
+        run_line++;
+
+    }
+
+    fclose(fp);
+
+    del_model = create_model (text_data);
+
+    /* create tree view */
+    del_tree = gtk_tree_view_new_with_model (del_model);
+    gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(del_tree)),
+                            GTK_SELECTION_SINGLE);
+
+    g_object_unref (del_model);
+    gtk_container_add (GTK_CONTAINER (del_sw), del_tree);
+
+        /* add columns to the tree view */
+    add_columns (GTK_TREE_VIEW (del_tree));
+
+    g_signal_connect( del_button1, "clicked", 
+        G_CALLBACK(del_button1_callback), del_tree );
+
+
+    gtk_widget_show_all(del_window);
+
+}
+
+void del_button1_callback( GtkWidget *widget, gpointer data ) {
+    
+    //printf("del\n");
+    remove_item(NULL,NULL,data);
+    
+    char *temp,t_text[100],d_texl[100];
+    strcpy(t_text,del_text);
+    temp = strtok(t_text,"\n");
+    strcpy(t_text,temp);
+
+    sprintf(d_texl,"sub_img/%s.jpg",t_text);
+
+    //printf("t+ %s\n",d_texl);
+
+    GtkWidget *dialog;
+
+    if (remove(d_texl) == 0) {
+
+        //printf("The file is deleted successfully.\n");
+        dialog = gtk_message_dialog_new(GTK_WINDOW(del_window),
+                                        GTK_DIALOG_DESTROY_WITH_PARENT,
+                                        GTK_MESSAGE_INFO,
+                                        GTK_BUTTONS_CLOSE,
+                                        "\nThe file is deleted successfully" );
+
+        gtk_window_set_title(GTK_WINDOW(dialog), "Warning");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+
+    } else {
+
+        //printf("The file is not deleted.\n");
+        dialog = gtk_message_dialog_new(GTK_WINDOW(del_window),
+                                        GTK_DIALOG_DESTROY_WITH_PARENT,
+                                        GTK_MESSAGE_INFO,
+                                        GTK_BUTTONS_CLOSE,
+                                        "\nNo file to deleted" );
+
         gtk_window_set_title(GTK_WINDOW(dialog), "Error");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
 
+    }
+
+
+    text_alldate all_data[1000] ;
+    
+    int run = 0 ;
+    FILE *fp , *new_fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    fp = fopen("all_data.txt","r");
+    //new_fp = fopen("all_data.txt","w");
+    while ((read = getline(&line, &len, fp)) != -1) {
+        
+        char text[100];
+        strcpy(text,line);
+        if( strcmp(text,del_text) )
+        {
+            //printf("t = %s",text);
+            strcpy(all_data[run].allText,text);
+            //printf("hi%d\n",run);
+            run++;
         }
+        
+    }
+    fclose(fp);
+
+    new_fp = fopen("all_data.txt","w");
+    
+    for(int i =0 ;i<run;i++)
+    {
+        //printf("i = %d\n",i);
+        fprintf(new_fp,"%s",all_data[i].allText);
+        //printf("%s",all_data[i].allText);
+    }
+
+    fclose(new_fp);
+
+    text_alldate A_data[1000] ;
+    
+    int run1 = 0 ;
+    FILE *nfp, *dfp ;
+    char * line1 = NULL;
+    size_t len1 = 0;
+    ssize_t read1;
+
+    nfp = fopen("data.txt","r");
+    
+    while ((read1 = getline(&line1, &len1, nfp)) != -1) {
+        
+        //printf("%s",del_text);
+        char text[100];
+        strcpy(text,line1);
+        if( strcmp(text,del_text) )
+        {
+            strcpy(A_data[run1].allText,text);
+            run1++;
+        }
+        
+    }
+    fclose(nfp);
+
+    dfp = fopen("data.txt","w");
+    
+    for(int i =0 ;i<run1;i++)
+    {
+        fprintf(dfp,"%s",A_data[i].allText);
+        //printf("%s",A_data[i].allText);
+    }
+
+    fclose(dfp);
+
+    /*
+cam1_10-10-2021_14-13-12
+cam1_10-10-2021_14-14-12
+cam1_10-10-2021_14-15-12
+cam1_10-10-2021_14-16-12
+cam1_10-10-2021_14-17-12
+cam1_25-09-2021_17-14-49
+
+    */
 
 }
+
+void del_button2_callback( GtkWidget *widget, gpointer data ) {
+    printf("del all\n");
+    GtkWidget *dialog;
+
+    int run = 0 ;
+    FILE *fp , *new_fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    fp = fopen("all_data.txt","r");
+    while ((read = getline(&line, &len, fp)) != -1) {
+        
+        char text[100];
+        char *temptext ;
+        char d_text[100] ;
+        strcpy(text,line);
+        temptext = strtok(text,"\n");
+        sprintf(d_text,"sub_img/%s.jpg",temptext);
+        remove(d_text);
+        
+    }
+    fclose(fp);
+
+    new_fp = fopen("all_data.txt","w");
+    fprintf(new_fp,"");
+    fclose(new_fp);
+
+/*
+cam1_10-10-2021_14-13-12
+cam1_10-10-2021_14-14-12
+cam1_10-10-2021_14-15-12
+cam1_10-10-2021_14-16-12
+cam1_10-10-2021_14-17-12
+cam1_25-09-2021_17-14-49
+
+*/
+}
+
+void
+remove_item(GSimpleAction *action, GVariant *parameter, gpointer data) {
+
+    GtkTreeIter iter;
+    GtkTreePath* path;
+    GtkTreeModel *model1;
+    GtkTreeSelection *selection;
+    GtkTreeView *treeview1 = GTK_TREE_VIEW(data);
+    char *c_name,*c_date,*c_time ;
+    char c_text[100] ;
+
+    model1 = gtk_tree_view_get_model(treeview1);
+    selection = gtk_tree_view_get_selection (treeview1);
+    if (gtk_tree_selection_get_selected (selection, NULL, &iter))
+    {
+        gtk_tree_model_get(model1,&iter,
+                                COLUMN_DATE, &c_date,
+                                COLUMN_ID, &c_name,
+                                COLUMN_TIME, &c_time,
+                                -1);
+
+        //g_print("Row : Age %s, Name %s, Result %s\n",c_name, c_date, c_time);
+        sprintf(del_text,"%s_%s_%s\n",c_name,c_date,c_time);
+        //printf("%s",c_text);
+
+        path = gtk_tree_model_get_path (model1, &iter);
+        gtk_list_store_remove (GTK_LIST_STORE (model1), &iter);
+        gtk_tree_path_free (path);
+    }
+
+}
+
+///////////////////////////////////////////////////////////////////
 
 void activate( GtkApplication *app, gpointer user_data ){
 
@@ -1073,6 +1485,8 @@ void main_activate( GtkApplication *app, gpointer user_data ) {
 
 }
 
+
+
 static gboolean name_pic( gpointer data ) {
 
 	if(counter_enabled)
@@ -1133,7 +1547,7 @@ static gboolean name_pic( gpointer data ) {
 	return TRUE; 
 }
 
-GtkTreeModel *create_model() {
+GtkTreeModel *create_model(student text_data[1000]) {
 
     gint i = 0;
     GtkListStore *store;
@@ -1148,37 +1562,6 @@ GtkTreeModel *create_model() {
 
                                 );    
 
-    FILE *fp;
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    int run_line ;
-    
-    run_line=0 ;
-    fp = fopen("data.txt","r");
-    
-    while ((read = getline(&line, &len, fp)) != -1) {
-
-        char cp_text[100] ;
-        char *sp_text;
-        strcpy(cp_text,line);
-        sp_text = strtok(cp_text,"\n");
-        strcpy(cp_text,sp_text);
-        
-        sp_text = strtok(cp_text,"_");
-        strcpy(text_data[run_line].iD,sp_text);
-
-        sp_text = strtok(NULL,"_");
-        strcpy(text_data[run_line].inDate,sp_text);
-
-        sp_text = strtok(NULL,"_");
-        strcpy(text_data[run_line].Time,sp_text);
-
-        run_line++;
-
-    }
-
-    fclose(fp);
 
     /* add data to the list store */
     for (i = 0; i < run_line; i++)
@@ -1237,3 +1620,4 @@ void add_columns (GtkTreeView *treeview) {
     gtk_tree_view_append_column (treeview, column);
   
 }
+
