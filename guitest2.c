@@ -47,7 +47,7 @@ GtkWidget *main_label1, *main_label2, *main_label3,*main_label4,*main_label5,*ma
 GtkWidget *main_status ;
 GtkWidget *main_button1, *main_button2 ,*main_button3 ;
 
-GtkWidget *server_button1;
+GtkWidget *server_button1,*topic_button1;
 GtkWidget *user_entry,*pass_entry ;
 GtkWidget *login_button1,*label_sever,*label_login,*label_pass,*back_window;
 
@@ -463,31 +463,32 @@ void tree_button2_callback( GtkWidget *widget, gpointer data ) {
     gtk_widget_show_all(pic_window);
 }
 
-char serverdoit = false;
-char topicdoit  = false;
+bool serverdoit = false;
+bool topicdoit  = false;
+bool logindoit  = false;
 
-static void show_question(GtkWidget *widget, gpointer mosq_window) {
+static void show_question_server(GtkWidget *widget, gpointer mosq_window) {
   
-  GtkResponseType result;
-  GtkWidget *dialog;
-  //GtkWidget *out;
-  dialog = gtk_message_dialog_new(GTK_WINDOW(mosq_window),
-            GTK_DIALOG_DESTROY_WITH_PARENT,
-            GTK_MESSAGE_QUESTION,
-            GTK_BUTTONS_YES_NO,
-            "\n Do You Want Save & Exit ?");
-  gtk_window_set_title(GTK_WINDOW(dialog), "   Save & Exit  ");         
+    GtkResponseType result;
+    GtkWidget *dialog;
+    //GtkWidget *out;
+    dialog = gtk_message_dialog_new(GTK_WINDOW(mosq_window),
+                GTK_DIALOG_DESTROY_WITH_PARENT,
+                GTK_MESSAGE_QUESTION,
+                GTK_BUTTONS_YES_NO,
+                "\n Do You Want Save & Exit ?");
+    gtk_window_set_title(GTK_WINDOW(dialog), "   Save & Exit  ");         
 
-  result = gtk_dialog_run(GTK_DIALOG(dialog));
-  if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
-    g_print( "Exit..." );
-    serverdoit = false;
-    gtk_widget_destroy(mosq_window);
-    
-     
-   } else {
-       gtk_widget_destroy(dialog);
-   }
+    result = gtk_dialog_run(GTK_DIALOG(dialog));
+    if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
+        g_print( "Exit...\n" );
+        serverdoit = false;
+        gtk_widget_destroy(mosq_window);
+        
+        
+    } else {
+        gtk_widget_destroy(dialog);
+    }
   
 
   
@@ -495,50 +496,50 @@ static void show_question(GtkWidget *widget, gpointer mosq_window) {
 
 static void show_question_topic(GtkWidget *widget, gpointer mosq_window) {
   
-  GtkResponseType result;
-  GtkWidget *dialog;
-  //GtkWidget *out;
-  dialog = gtk_message_dialog_new(GTK_WINDOW(mosq_window),
-            GTK_DIALOG_DESTROY_WITH_PARENT,
-            GTK_MESSAGE_QUESTION,
-            GTK_BUTTONS_YES_NO,
-            "\n Do You Want Save & Exit ?");
-  gtk_window_set_title(GTK_WINDOW(dialog), "   Save & Exit  ");         
+    GtkResponseType result;
+    GtkWidget *dialog;
+    //GtkWidget *out;
+    dialog = gtk_message_dialog_new(GTK_WINDOW(mosq_window),
+                GTK_DIALOG_DESTROY_WITH_PARENT,
+                GTK_MESSAGE_QUESTION,
+                GTK_BUTTONS_YES_NO,
+                "\n Do You Want Save & Exit ?");
+    gtk_window_set_title(GTK_WINDOW(dialog), "   Save & Exit  ");         
 
-  result = gtk_dialog_run(GTK_DIALOG(dialog));
-  if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
-    g_print( "Exit..." );
-    topicdoit = false;
-    //gtk_widget_destroy(window);
-    gtk_widget_destroy(mosq_window);
-    
-     
-   }
+    result = gtk_dialog_run(GTK_DIALOG(dialog));
+    if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
+        g_print( "Exit...\n" );
+        topicdoit = false;
+        gtk_widget_destroy(mosq_window);
+        
+    } else {
+        gtk_widget_destroy(dialog);
+    }
 
   
 }
 
 static void show_question_login(GtkWidget *widget, gpointer login_window) {
   
-  GtkResponseType result;
-  GtkWidget *dialog;
-  //GtkWidget *out;
-  dialog = gtk_message_dialog_new(GTK_WINDOW(login_window),
-            GTK_DIALOG_DESTROY_WITH_PARENT,
-            GTK_MESSAGE_QUESTION,
-            GTK_BUTTONS_YES_NO,
-            "\n Do You Want Exit ?");
-  gtk_window_set_title(GTK_WINDOW(dialog), "  Exit  ");         
+    GtkResponseType result;
+    GtkWidget *dialog;
+    //GtkWidget *out;
+    dialog = gtk_message_dialog_new(GTK_WINDOW(login_window),
+                GTK_DIALOG_DESTROY_WITH_PARENT,
+                GTK_MESSAGE_QUESTION,
+                GTK_BUTTONS_YES_NO,
+                "\n Do You Want Exit ?");
+    gtk_window_set_title(GTK_WINDOW(dialog), "  Exit  ");         
 
-  result = gtk_dialog_run(GTK_DIALOG(dialog));
-  if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
-    g_print( "Exit..." );
-    topicdoit = false;
-    //gtk_widget_destroy(window);
-    gtk_widget_destroy(login_window);
-    
-     
-   }
+    result = gtk_dialog_run(GTK_DIALOG(dialog));
+    if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
+        g_print( "Exit..." );
+        logindoit = false;
+        gtk_widget_destroy(login_window);
+
+    } else {
+        gtk_widget_destroy(dialog);
+    }
   
 
   
@@ -553,10 +554,14 @@ static void check_false_topic(GtkWidget *widget, gpointer mosq_window) {
     topicdoit = false;
 }
 
+static void check_false_login(GtkWidget *widget, gpointer mosq_window) {
+    logindoit = false;
+}
+
 void server_button( GtkWidget *widget, gpointer data ) {
     
     GtkWidget *grid_dlc ;
-    //printf("Out loop %d",i);
+
     if (!serverdoit){
     
         serverdoit = true;
@@ -594,7 +599,7 @@ void server_button( GtkWidget *widget, gpointer data ) {
 
 
         server_entry = gtk_entry_new();
-        gtk_entry_set_text(GTK_ENTRY(server_entry),"------Input Server------");
+        gtk_entry_set_placeholder_text(GTK_ENTRY(server_entry),"Server");
         gtk_widget_set_margin_top ( server_entry, 20 );
         gtk_grid_attach (GTK_GRID (grid_dlc), server_entry, 0, 1, 1, 1);
         gtk_widget_set_margin_start ( server_entry, 70 );
@@ -602,13 +607,16 @@ void server_button( GtkWidget *widget, gpointer data ) {
         
         server_button1 =  gtk_button_new_with_label( "Save" );
         gtk_grid_attach (GTK_GRID (grid_dlc), server_button1, 0, 2, 1, 1);
-        g_signal_connect(server_button1, "clicked", G_CALLBACK(show_question),mosq_window); 
-        gtk_widget_set_margin_start ( server_button1, 90 );
-        gtk_widget_set_margin_end ( server_button1, 60 );
-        gtk_widget_set_margin_top ( server_button1, 10 );
+
+        g_signal_connect(server_button1, "clicked", 
+            G_CALLBACK(show_question_server),mosq_window); 
+            
+        gtk_widget_set_margin_start ( server_button1, 63 );
+        gtk_widget_set_margin_end ( server_button1, 85 );
+        gtk_widget_set_margin_top ( server_button1, 20 );
         
         back_window = gtk_button_new_with_label( "Back" );
-        gtk_grid_attach (GTK_GRID (grid_dlc), back_window, 0, 3, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), back_window, 0, 2, 2, 1);
         
         g_signal_connect(back_window, "clicked", 
                     G_CALLBACK(check_false_server),mosq_window); 
@@ -616,9 +624,9 @@ void server_button( GtkWidget *widget, gpointer data ) {
         //g_signal_connect_swapped( back_window, "clicked", 
 		//            G_CALLBACK( gtk_widget_destroy), mosq_window );
 
-        gtk_widget_set_margin_start ( back_window, 105 );
-        gtk_widget_set_margin_end ( back_window, 75 );
-        gtk_widget_set_margin_top ( back_window, 5 );
+        gtk_widget_set_margin_start ( back_window, 193 );
+        gtk_widget_set_margin_end ( back_window, 40 );
+        gtk_widget_set_margin_top ( back_window, 20 );
 
         gtk_widget_show_all(mosq_window);
 
@@ -628,21 +636,7 @@ void server_button( GtkWidget *widget, gpointer data ) {
         gtk_widget_destroy(mosq_window);
         serverdoit = false;
         server_button(mosq_window,NULL);
-        /*
-        serverdoit = false;
-        //gtk_widget_destroy(mosq_window);
-        
 
-        GtkWidget *dialog;
-        dialog = gtk_message_dialog_new(GTK_WINDOW(window),
-            GTK_DIALOG_DESTROY_WITH_PARENT,
-            GTK_MESSAGE_ERROR,
-            GTK_BUTTONS_OK,
-            "\n         Error to Open\n Please Save you Server \n             And Exit");
-        gtk_window_set_title(GTK_WINDOW(dialog), "Error");
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
-        */
         }
 
 }
@@ -650,7 +644,6 @@ void server_button( GtkWidget *widget, gpointer data ) {
 void topic_button( GtkWidget *widget, gpointer data ) {
     
     GtkWidget *grid_dlc ;
-    //printf("Out loop %d",i);
     if (!topicdoit){
         topicdoit = true;
         
@@ -688,29 +681,29 @@ void topic_button( GtkWidget *widget, gpointer data ) {
 
 
         topic_entry = gtk_entry_new();
-        gtk_entry_set_text(GTK_ENTRY(topic_entry),"-------Input Topic-------");
+        gtk_entry_set_placeholder_text(GTK_ENTRY(topic_entry),"Topic");
         gtk_widget_set_margin_top ( topic_entry, 20 );
         gtk_grid_attach (GTK_GRID (grid_dlc), topic_entry, 0, 1, 1, 1);
         gtk_widget_set_margin_start ( topic_entry, 70 );
         gtk_widget_set_margin_end ( topic_entry, 40 );
         
 
-        server_button1 =  gtk_button_new_with_label( "Save" );
-        gtk_grid_attach (GTK_GRID (grid_dlc), server_button1, 0, 2, 1, 1);
-        g_signal_connect(server_button1, "clicked", G_CALLBACK(show_question_topic),mosq_window); 
-        gtk_widget_set_margin_start ( server_button1, 90 );
-        gtk_widget_set_margin_end ( server_button1, 60 );
-        gtk_widget_set_margin_top ( server_button1, 10 );
+        topic_button1 =  gtk_button_new_with_label( "Save" );
+        gtk_grid_attach (GTK_GRID (grid_dlc), topic_button1, 0, 2, 1, 1);
+        g_signal_connect(topic_button1, "clicked", G_CALLBACK(show_question_topic),mosq_window); 
+        gtk_widget_set_margin_start ( topic_button1, 63 );
+        gtk_widget_set_margin_end ( topic_button1, 85 );
+        gtk_widget_set_margin_top ( topic_button1, 20 );
 
         back_window = gtk_button_new_with_label( "Back" );
-        gtk_grid_attach (GTK_GRID (grid_dlc), back_window, 0, 3, 1, 1);
+        gtk_grid_attach (GTK_GRID (grid_dlc), back_window, 0, 2, 2, 1);
         g_signal_connect(back_window, "clicked", 
         G_CALLBACK(check_false_topic),mosq_window); 
         g_signal_connect_swapped( back_window, "clicked", 
 		G_CALLBACK( gtk_widget_destroy), mosq_window );        
-        gtk_widget_set_margin_start ( back_window, 105 );
-        gtk_widget_set_margin_end ( back_window, 75 );
-        gtk_widget_set_margin_top ( back_window, 5 );
+        gtk_widget_set_margin_start ( back_window, 193 );
+        gtk_widget_set_margin_end ( back_window, 40 );
+        gtk_widget_set_margin_top ( back_window, 20 );
         
         gtk_widget_show_all(mosq_window);
 
@@ -720,31 +713,17 @@ void topic_button( GtkWidget *widget, gpointer data ) {
     else {
         topicdoit = false;
         gtk_widget_destroy(mosq_window);
-        
-        //i --;
-        
-        printf("Else");
+        topic_button(mosq_window,NULL);
 
-        GtkWidget *dialog;
-        dialog = gtk_message_dialog_new(GTK_WINDOW(window),
-            GTK_DIALOG_DESTROY_WITH_PARENT,
-            GTK_MESSAGE_ERROR,
-            GTK_BUTTONS_OK,
-            "\n        Error to Open\n Please Save you Topic \n            And Exit");
-        gtk_window_set_title(GTK_WINDOW(dialog), "Error");
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
-
-        }
+    }
 
 }
 
 void login_button( GtkWidget *widget, gpointer data ) {
     
     GtkWidget *grid_dlc ;
-    //printf("Out loop %d",i);
-    if (!topicdoit){
-        topicdoit = true;
+    if (!logindoit){
+        logindoit = true;
         
         login_window = gtk_application_window_new( app );
 	
@@ -774,7 +753,7 @@ void login_button( GtkWidget *widget, gpointer data ) {
                             pango_font_description_from_string("FreeSerif 20"));
         gtk_grid_attach (GTK_GRID (grid_dlc), label_login, 0, 0, 3, 1);
         gtk_widget_set_margin_top ( label_login, 20 );
-        gtk_widget_set_margin_start ( label_login, 130 );
+        gtk_widget_set_margin_start ( label_login, 125 );
         
 
         label_login = gtk_label_new("User");
@@ -783,14 +762,12 @@ void login_button( GtkWidget *widget, gpointer data ) {
         gtk_grid_attach (GTK_GRID (grid_dlc), label_login, 0, 1, 1, 1);
         gtk_widget_set_margin_top ( label_login, 20 );
         gtk_widget_set_margin_start ( label_login, 100 );
-        //gtk_widget_set_margin_end ( label_login, 0 );
         
         user_entry = gtk_entry_new();
-        gtk_entry_set_text(GTK_ENTRY(user_entry),"-------User-------");
+        gtk_entry_set_placeholder_text(GTK_ENTRY(user_entry),"User");
         gtk_widget_set_margin_top ( user_entry, 20 );
         gtk_grid_attach (GTK_GRID (grid_dlc), user_entry, 1, 1, 1, 1);
         gtk_widget_set_margin_start ( user_entry, 10 );
-        //gtk_widget_set_margin_end ( user_entry, 50 );
 
         label_pass = gtk_label_new("Password");
         gtk_widget_override_font(label_pass,
@@ -798,14 +775,13 @@ void login_button( GtkWidget *widget, gpointer data ) {
         gtk_grid_attach (GTK_GRID (grid_dlc), label_pass, 0, 2, 1, 1);
         gtk_widget_set_margin_top ( label_pass, 20 );
         gtk_widget_set_margin_start ( label_pass, 130 );
-        //gtk_widget_set_margin_end ( label_login, 0 );
 
         pass_entry = gtk_entry_new();
-        gtk_entry_set_text(GTK_ENTRY(pass_entry),"-------Pass01-------");
+        gtk_entry_set_placeholder_text(GTK_ENTRY(pass_entry),"Password");
+        gtk_entry_set_visibility(GTK_ENTRY(pass_entry),FALSE);
         gtk_widget_set_margin_top ( pass_entry, 20 );
         gtk_grid_attach (GTK_GRID (grid_dlc), pass_entry, 1, 2, 1, 1);
         gtk_widget_set_margin_start ( pass_entry, 10 );
-        //gtk_widget_set_margin_end ( topic_entry, 130 );
 
         login_button1 = gtk_button_new_with_label( "login" );
         gtk_grid_attach (GTK_GRID (grid_dlc), login_button1, 0, 3, 3, 1);
@@ -824,7 +800,7 @@ void login_button( GtkWidget *widget, gpointer data ) {
         gtk_grid_attach (GTK_GRID (grid_dlc), server_button1, 0, 4, 4, 1);
         
         g_signal_connect(server_button1, "clicked", 
-                    G_CALLBACK(check_false_topic),login_window); 
+                    G_CALLBACK(check_false_login),login_window); 
         
         g_signal_connect_swapped( server_button1, "clicked", 
 		            G_CALLBACK( gtk_widget_destroy), login_window );
@@ -839,7 +815,7 @@ void login_button( GtkWidget *widget, gpointer data ) {
     }
 
     else {
-        topicdoit = false;
+        logindoit = false;
         gtk_widget_destroy(login_window);
         login_button(login_window,NULL);
         
@@ -885,6 +861,7 @@ void make_del_tree() {
     del_window = gtk_application_window_new( app );
     gtk_window_set_title( GTK_WINDOW(del_window), "Del" );
     gtk_window_set_default_size( GTK_WINDOW(del_window), 320, 480 );
+    gtk_window_set_resizable (GTK_WINDOW(del_window), FALSE);
     gtk_window_set_position( GTK_WINDOW(del_window), GTK_WIN_POS_CENTER );
 
     del_headerbar = gtk_header_bar_new ();
@@ -892,7 +869,7 @@ void make_del_tree() {
     gtk_window_set_application(GTK_WINDOW(del_window), GTK_APPLICATION (app));
     gtk_header_bar_set_title(GTK_HEADER_BAR(del_headerbar), "ADMIN ");
     gtk_header_bar_set_subtitle(GTK_HEADER_BAR(del_headerbar), "Demo Application");
-    gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(del_headerbar), TRUE);
+    gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(del_headerbar), FALSE);
     gtk_window_set_titlebar (GTK_WINDOW(del_window), del_headerbar);
 
     del_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -1200,12 +1177,11 @@ void activate( GtkApplication *app, gpointer user_data ){
     g_menu_append(mosqmenu, "Topic", "app.topic");
     editmenu = g_menu_new();
     g_menu_append(editmenu, "Login","app.login");
-    //g_menu_append(editmenu, "_Add", "app.add");
-    //g_menu_append(editmenu, "_Delete", "app.delete");
+
     g_menu_append_section(mosqmenu, NULL, G_MENU_MODEL(editmenu));
     gtk_menu_button_set_menu_model(GTK_MENU_BUTTON(gearmenubutton),
                                     G_MENU_MODEL(mosqmenu));
-    //g_object_unref(editmenu);
+    g_object_unref(editmenu);
     g_object_unref(mosqmenu);
 
     head_button1 = gtk_button_new_with_label("LIST");
@@ -1249,7 +1225,7 @@ void sub_activate( GtkApplication *app, gpointer user_data ) {
     gtk_grid_attach (GTK_GRID (sub_grid), sub_label1, 0, 2, 1, 1);
     gtk_widget_set_margin_start ( sub_label1, 470 );
     gtk_widget_set_margin_end ( sub_label1, 0 );
-    gtk_widget_set_margin_top ( sub_label1, 20 );
+    gtk_widget_set_margin_top ( sub_label1, 30 );
 
     sub_label2 = gtk_label_new("CAM ID:");
     gtk_widget_override_font(sub_label2,
@@ -1267,8 +1243,8 @@ void sub_activate( GtkApplication *app, gpointer user_data ) {
 
     sub_entry1 = gtk_entry_new();
     gtk_entry_set_text(GTK_ENTRY(sub_entry1),"1");
-    gtk_widget_set_margin_top ( sub_entry1, 20 );
     gtk_grid_attach (GTK_GRID (sub_grid), sub_entry1, 0, 2, 1, 1);
+    gtk_widget_set_margin_top ( sub_entry1, 30 );
     gtk_widget_set_margin_start ( sub_entry1, 835);
     gtk_widget_set_margin_end ( sub_entry1, 100 );
 
@@ -1294,15 +1270,15 @@ void sub_activate( GtkApplication *app, gpointer user_data ) {
     gtk_widget_set_margin_end ( sub_button1, 120 );
     gtk_widget_set_margin_top ( sub_button1, 20 );
 
-    label_sever = gtk_label_new("Server : 26.90.194.251 ");
+    label_sever = gtk_label_new("Server : 203.146.252.179 ");
     gtk_widget_override_font(label_sever,
                             pango_font_description_from_string("Monospace 9"));
     gtk_grid_attach (GTK_GRID (sub_grid), label_sever, 0, 6, 1, 1);
     gtk_widget_set_margin_start ( label_sever, 0 );
     gtk_widget_set_margin_end ( label_sever, 870 );
-    gtk_widget_set_margin_top ( label_sever, 80 );
+    gtk_widget_set_margin_top ( label_sever, 75 );
 
-    label_topic = gtk_label_new(" Topic  : KJPIE");
+    label_topic = gtk_label_new(" Topic  : kjpie");
     gtk_widget_override_font(label_topic,
                             pango_font_description_from_string("Monospace 9"));
     gtk_grid_attach (GTK_GRID (sub_grid), label_topic, 0, 7, 1, 1);
@@ -1311,8 +1287,9 @@ void sub_activate( GtkApplication *app, gpointer user_data ) {
     gtk_widget_set_margin_top ( label_topic, 0 );
 
     main_status = gtk_label_new_with_mnemonic("");
-    gtk_grid_attach (GTK_GRID (sub_grid), main_status, 3, 7, 1, 1);
-    gtk_widget_set_margin_start ( main_status, 500 );
+    gtk_grid_attach (GTK_GRID (sub_grid), main_status, 3, 6, 1, 1);
+    gtk_widget_set_margin_start ( main_status, 530 );
+    gtk_widget_set_margin_top ( main_status, 75 );
 
     if(is_connected){
 
@@ -1353,7 +1330,7 @@ void main_activate( GtkApplication *app, gpointer user_data ) {
 	pic_box1 = gtk_event_box_new();
     gtk_widget_set_size_request(pic_box1,576,432);
 
-	img1 = gtk_image_new_from_file("cam1_06-10-2021_21-31-23.jpg");
+	img1 = gtk_image_new_from_file("noimage.jpg");
 	gtk_container_add(GTK_CONTAINER(pic_box1), img1);
   	gtk_grid_attach (GTK_GRID (grid), pic_box1, 0, 1, 3, 1);
     gtk_widget_set_margin_top ( pic_box1, 10 );
@@ -1363,7 +1340,7 @@ void main_activate( GtkApplication *app, gpointer user_data ) {
 	pic_box2 = gtk_event_box_new();
     gtk_widget_set_size_request(pic_box2,576,432);
 
-	img2 = gtk_image_new_from_file("cam1_06-10-2021_21-31-23.jpg");
+	img2 = gtk_image_new_from_file("noimage.jpg");
 	gtk_container_add(GTK_CONTAINER(pic_box2), img2);
     gtk_grid_attach (GTK_GRID (grid), pic_box2, 3, 1, 3, 1);
     gtk_widget_set_margin_top ( pic_box2 , 10 );
@@ -1371,7 +1348,7 @@ void main_activate( GtkApplication *app, gpointer user_data ) {
 	pic_box3 = gtk_event_box_new();
     gtk_widget_set_size_request(pic_box3,576,432);
 
-	img3 = gtk_image_new_from_file("cam1_06-10-2021_21-31-23.jpg");
+	img3 = gtk_image_new_from_file("noimage.jpg");
 	gtk_container_add(GTK_CONTAINER(pic_box3), img3);
     gtk_grid_attach (GTK_GRID (grid), pic_box3, 6, 1, 3, 1);
     gtk_widget_set_margin_top ( pic_box3 , 10 );
@@ -1379,7 +1356,7 @@ void main_activate( GtkApplication *app, gpointer user_data ) {
 	main_label1 = gtk_label_new_with_mnemonic( cam_id1 );
     gtk_widget_override_font(main_label1,
                             pango_font_description_from_string("FreeSans 22"));
-    //gtk_widget_set_size_request(main_label1,260,40);
+
     gtk_grid_attach (GTK_GRID (grid), main_label1, 0, 2, 1, 1);
     gtk_widget_set_margin_top ( main_label1 , 20 );
     gtk_widget_set_margin_start ( main_label1 , 105 );
@@ -1444,7 +1421,7 @@ void main_activate( GtkApplication *app, gpointer user_data ) {
     gtk_widget_set_margin_start ( main_button3, 0 );
     gtk_widget_set_margin_end ( main_button3, 0 );
 
-    label_sever = gtk_label_new("Server : 26.90.194.251 ");
+    label_sever = gtk_label_new("Server : 203.146.252.179 ");
     gtk_widget_override_font(label_sever,
                             pango_font_description_from_string("Monospace 9"));
     gtk_grid_attach (GTK_GRID (grid), label_sever, 0, 6, 1, 1);
@@ -1453,7 +1430,7 @@ void main_activate( GtkApplication *app, gpointer user_data ) {
     gtk_widget_set_margin_end ( label_sever, 240 );
     
 
-    label_topic = gtk_label_new(" Topic  : KJPIE");
+    label_topic = gtk_label_new(" Topic  : kjpie");
     gtk_widget_override_font(label_topic,
                             pango_font_description_from_string("Monospace 9"));
     gtk_grid_attach (GTK_GRID (grid), label_topic, 0, 7, 1, 1);
