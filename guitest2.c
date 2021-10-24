@@ -1,6 +1,6 @@
 // $ sudo apt-get install libgtk-3-dev
 /*
-gcc -g guitest2.c -o guitest2 -lmosquitto -lpthread  \
+gcc -g guitest2.c -o guitest2 -lmosquitto -lpthread -lcurl \
     `pkg-config --cflags gtk+-3.0` \
     `pkg-config --libs gtk+-3.0`
 */ 
@@ -51,6 +51,11 @@ GtkWidget *server_button1,*topic_button1;
 GtkWidget *user_entry,*pass_entry ;
 GtkWidget *login_button1,*label_sever,*label_login,*label_pass,*back_window;
 
+GtkWidget *del_box, *del_hbox ;
+GtkWidget *del_button1 , *del_button2 ,*del_sw ;
+GtkWidget *del_tree ;
+GtkWidget *delhead_button1 ,*delhead_button2  ;
+GtkTreeModel *del_model = NULL;
 
 
 static gboolean counter_enabled = FALSE;
@@ -137,7 +142,7 @@ const GActionEntry app_actions[] = {
 int main( int argc,char **argv ) {
 
     to_connect_mqtt( mosq , clean_session);
-
+    printf("mosqqqqq\n");
     //---------------------------------------
     
     int status;
@@ -466,6 +471,7 @@ void tree_button2_callback( GtkWidget *widget, gpointer data ) {
 bool serverdoit = false;
 bool topicdoit  = false;
 bool logindoit  = false;
+bool loginnow = false ;
 
 static void show_question_server(GtkWidget *widget, gpointer mosq_window) {
   
@@ -484,9 +490,10 @@ static void show_question_server(GtkWidget *widget, gpointer mosq_window) {
         g_print( "Exit...\n" );
         serverdoit = false;
         gtk_widget_destroy(mosq_window);
+        clean_session = !clean_session;
         
-        
-    } else {
+    } 
+    else {
         gtk_widget_destroy(dialog);
     }
   
@@ -498,7 +505,7 @@ static void show_question_topic(GtkWidget *widget, gpointer mosq_window) {
   
     GtkResponseType result;
     GtkWidget *dialog;
-    //GtkWidget *out;
+
     dialog = gtk_message_dialog_new(GTK_WINDOW(mosq_window),
                 GTK_DIALOG_DESTROY_WITH_PARENT,
                 GTK_MESSAGE_QUESTION,
@@ -510,6 +517,7 @@ static void show_question_topic(GtkWidget *widget, gpointer mosq_window) {
     if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
         g_print( "Exit...\n" );
         topicdoit = false;
+        to_connect_topic(mosq,clean_session);
         gtk_widget_destroy(mosq_window);
         
     } else {
@@ -523,7 +531,7 @@ static void show_question_login(GtkWidget *widget, gpointer login_window) {
   
     GtkResponseType result;
     GtkWidget *dialog;
-    //GtkWidget *out;
+
     dialog = gtk_message_dialog_new(GTK_WINDOW(login_window),
                 GTK_DIALOG_DESTROY_WITH_PARENT,
                 GTK_MESSAGE_QUESTION,
@@ -533,7 +541,7 @@ static void show_question_login(GtkWidget *widget, gpointer login_window) {
 
     result = gtk_dialog_run(GTK_DIALOG(dialog));
     if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
-        g_print( "Exit..." );
+        //g_print( "Exit..." );
         logindoit = false;
         gtk_widget_destroy(login_window);
 
@@ -722,7 +730,7 @@ void topic_button( GtkWidget *widget, gpointer data ) {
 void login_button( GtkWidget *widget, gpointer data ) {
     
     GtkWidget *grid_dlc ;
-    if (!logindoit){
+    if ( logindoit == false && loginnow == false ){
         logindoit = true;
         
         login_window = gtk_application_window_new( app );
@@ -814,12 +822,17 @@ void login_button( GtkWidget *widget, gpointer data ) {
 
     }
 
-    else {
+    else if( logindoit == true && loginnow == false ) {
         logindoit = false;
         gtk_widget_destroy(login_window);
         login_button(login_window,NULL);
         
-        }
+    } else if( logindoit == true && loginnow == true ) {
+        //printf("hi\n");
+        gtk_widget_destroy(del_window);
+        make_del_tree();
+
+    }
 
 }
 
@@ -830,7 +843,7 @@ void login_button1_callback( GtkWidget *widget, gpointer data ) {
     if( !(strcmp(user_text,"admin")) && !(strcmp(pass_text,"12345")) ){
         printf("u= %s\np = %s\n",user_text,pass_text);
         gtk_widget_destroy(login_window);
-        topicdoit = false;
+        loginnow = true;
         make_del_tree();
 
     }
@@ -850,13 +863,76 @@ void login_button1_callback( GtkWidget *widget, gpointer data ) {
     }
 }
 
+
+void delhead_button2_callback(GtkWidget *widget, gpointer data) {
+
+    logindoit  = false;
+    loginnow = false ;
+    gtk_widget_destroy(del_window) ;
+}
+
+void refresh_tree() {
+    
+    gtk_widget_destroy(del_sw);
+
+
+    del_sw = gtk_scrolled_window_new (NULL, NULL);
+    gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (del_sw),
+                                            GTK_SHADOW_ETCHED_IN);
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (del_sw),
+                                        GTK_POLICY_NEVER,
+                                        GTK_POLICY_AUTOMATIC);
+    gtk_box_pack_start (GTK_BOX (del_box), del_sw, TRUE, TRUE, 0);
+
+    FILE *fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    student text_data[1000] ;
+
+    run_line = 0 ;
+    fp = fopen("all_data.txt","r");
+        
+    while ((read = getline(&line, &len, fp)) != -1) {
+
+        char cp_text[100] ;
+        char *sp_text;
+        strcpy(cp_text,line);
+        sp_text = strtok(cp_text,"\n");
+        strcpy(cp_text,sp_text);
+            
+        sp_text = strtok(cp_text,"_");
+        strcpy(text_data[run_line].iD,sp_text);
+
+        sp_text = strtok(NULL,"_");
+        strcpy(text_data[run_line].inDate,sp_text);
+
+        sp_text = strtok(NULL,"_");
+        strcpy(text_data[run_line].Time,sp_text);
+
+        run_line++;
+
+    }
+
+    fclose(fp);
+
+    del_model = create_model (text_data);
+
+    /* create tree view */
+    del_tree = gtk_tree_view_new_with_model (del_model);
+    gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(del_tree)),
+                            GTK_SELECTION_SINGLE);
+
+    g_object_unref (del_model);
+    gtk_container_add (GTK_CONTAINER (del_sw), del_tree);
+
+        /* add columns to the tree view */
+    add_columns (GTK_TREE_VIEW (del_tree));
+    gtk_widget_show_all(del_window);
+
+}
+
 void make_del_tree() {
-
-    GtkWidget *del_button1 , *del_button2 ;
-    GtkWidget *del_box ,*del_sw, *del_hbox ;
-    GtkWidget *del_tree ;
-    GtkTreeModel *del_model = NULL;
-
 
     del_window = gtk_application_window_new( app );
     gtk_window_set_title( GTK_WINDOW(del_window), "Del" );
@@ -872,11 +948,23 @@ void make_del_tree() {
     gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(del_headerbar), FALSE);
     gtk_window_set_titlebar (GTK_WINDOW(del_window), del_headerbar);
 
+    delhead_button2 = gtk_button_new_with_label("Exit");
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(del_headerbar), delhead_button2);
+    g_signal_connect( delhead_button2, "clicked", 
+		G_CALLBACK(delhead_button2_callback), NULL );
+
+
     del_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(del_window), del_box);
 
     del_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_end(GTK_BOX(del_box), del_hbox,FALSE , TRUE , 0);
+
+    delhead_button1 = gtk_button_new_with_label("Refresh");
+    gtk_box_pack_end( GTK_BOX(del_box), delhead_button1,FALSE , TRUE , 0 );
+    //g_signal_connect( delhead_button1, "clicked", 
+	//	G_CALLBACK(refresh_tree), del_sw );
+
 
     del_button2 = gtk_button_new_with_label("DELETE ALL");
     gtk_box_pack_end( GTK_BOX(del_hbox), del_button2,TRUE , TRUE , 0 );
@@ -894,6 +982,9 @@ void make_del_tree() {
                                         GTK_POLICY_NEVER,
                                         GTK_POLICY_AUTOMATIC);
     gtk_box_pack_start (GTK_BOX (del_box), del_sw, TRUE, TRUE, 0);
+
+    g_signal_connect( delhead_button1, "clicked", 
+		G_CALLBACK(refresh_tree), del_sw );
 
     FILE *fp;
     char * line = NULL;
@@ -944,14 +1035,16 @@ void make_del_tree() {
         G_CALLBACK(del_button1_callback), del_tree );
 
 
+
+
+
     gtk_widget_show_all(del_window);
 
 }
 
 void del_button1_callback( GtkWidget *widget, gpointer data ) {
     
-    //printf("del\n");
-    remove_item(NULL,NULL,data);
+    remove_item(NULL,NULL,del_tree);
     
     char *temp,t_text[100],d_texl[100];
     strcpy(t_text,del_text);
@@ -1076,32 +1169,66 @@ cam1_25-09-2021_17-14-49
 }
 
 void del_button2_callback( GtkWidget *widget, gpointer data ) {
-    printf("del all\n");
-    GtkWidget *dialog;
 
-    int run = 0 ;
-    FILE *fp , *new_fp;
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
+    GtkWidget *dialog, *dialog2;
+    GtkResponseType result;
 
-    fp = fopen("all_data.txt","r");
-    while ((read = getline(&line, &len, fp)) != -1) {
-        
-        char text[100];
-        char *temptext ;
-        char d_text[100] ;
-        strcpy(text,line);
-        temptext = strtok(text,"\n");
-        sprintf(d_text,"sub_img/%s.jpg",temptext);
-        remove(d_text);
-        
+    dialog2 = gtk_message_dialog_new(GTK_WINDOW(del_window),
+                GTK_DIALOG_DESTROY_WITH_PARENT,
+                GTK_MESSAGE_QUESTION,
+                GTK_BUTTONS_YES_NO,
+                "\n Do You want delete all file ?");
+    gtk_window_set_title(GTK_WINDOW(dialog2), "  Warning  ");         
+
+    result = gtk_dialog_run(GTK_DIALOG(dialog2));
+
+    if (result == GTK_RESPONSE_YES || result == GTK_RESPONSE_APPLY) {
+
+        gtk_widget_destroy(dialog2);
+        int run = 0 ;
+        FILE *fp , *new_fp ,*new_fp2;
+        char * line = NULL;
+        size_t len = 0;
+        ssize_t read;
+
+        fp = fopen("all_data.txt","r");
+        while ((read = getline(&line, &len, fp)) != -1) {
+            
+            char text[100];
+            char *temptext ;
+            char d_text[100] ;
+            strcpy(text,line);
+            temptext = strtok(text,"\n");
+            sprintf(d_text,"sub_img/%s.jpg",temptext);
+            remove(d_text);
+            
+        }
+
+        fclose(fp);
+
+        new_fp = fopen("all_data.txt","w");
+        fprintf(new_fp,"");
+        fclose(new_fp);
+
+        new_fp2 = fopen("data.txt","w");
+        fprintf(new_fp2,"");
+        fclose(new_fp2);
+
+        //gtk_widget_destroy(del_window);
+        refresh_tree();
+        dialog = gtk_message_dialog_new(GTK_WINDOW(del_window),
+                                            GTK_DIALOG_DESTROY_WITH_PARENT,
+                                            GTK_MESSAGE_INFO,
+                                            GTK_BUTTONS_CLOSE,
+                                            "\nAll file is deleted successfully!!!" );
+
+        gtk_window_set_title(GTK_WINDOW(dialog), "Warning");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+    } 
+    else {
+        gtk_widget_destroy(dialog2);
     }
-    fclose(fp);
-
-    new_fp = fopen("all_data.txt","w");
-    fprintf(new_fp,"");
-    fclose(new_fp);
 
 /*
 cam1_10-10-2021_14-13-12
@@ -1135,9 +1262,7 @@ remove_item(GSimpleAction *action, GVariant *parameter, gpointer data) {
                                 COLUMN_TIME, &c_time,
                                 -1);
 
-        //g_print("Row : Age %s, Name %s, Result %s\n",c_name, c_date, c_time);
         sprintf(del_text,"%s_%s_%s\n",c_name,c_date,c_time);
-        //printf("%s",c_text);
 
         path = gtk_tree_model_get_path (model1, &iter);
         gtk_list_store_remove (GTK_LIST_STORE (model1), &iter);
@@ -1520,6 +1645,21 @@ static gboolean name_pic( gpointer data ) {
         }
 
 	}
+
+    if(is_connected){
+
+        gtk_label_set_text(GTK_LABEL(main_status),"• Connect");
+        gtk_widget_override_font(main_status,
+                            pango_font_description_from_string("Monospace 9"));
+
+    }
+    else{
+
+        gtk_label_set_text(GTK_LABEL(main_status),"• Disconnect");
+        gtk_widget_override_font(main_status,
+                            pango_font_description_from_string("Monospace 10"));
+
+    }
 
 	return TRUE; 
 }
