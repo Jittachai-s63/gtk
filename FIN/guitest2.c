@@ -51,6 +51,8 @@ GtkWidget *main_button1, *main_button2 ,*main_button3 ;
 GtkWidget *server_button1,*topic_button1;
 GtkWidget *user_entry,*pass_entry ;
 GtkWidget *login_button1,*label_sever2,*label_sever,*label_login,*label_pass,*back_window;
+GtkWidget *label_head_server,*label_head_topic;
+GtkWidget *label_head_server2,*label_head_topic2;
 
 GtkWidget *del_box, *del_hbox ;
 GtkWidget *del_button1 , *del_button2 ,*del_sw ;
@@ -500,11 +502,12 @@ static void show_question_server(GtkWidget *widget, gpointer mosq_window) {
         to_connect_server(client,conn_opts);
 
         char temp[50] ;
-        sprintf(temp,"Server : %s",server_name);
+        sprintf(temp,"%s",server_name);
 
         gtk_widget_override_font(label_sever2,
                             pango_font_description_from_string("Monospace 9"));
         gtk_label_set_text(GTK_LABEL(label_sever2),temp);
+        gtk_widget_set_size_request(label_sever2,0,0);
 
         gtk_widget_destroy(mosq_window);
         
@@ -539,7 +542,7 @@ static void show_question_topic(GtkWidget *widget, gpointer mosq_window) {
         to_connect_topic(client,conn_opts);
 
         char temp[50] ;
-        sprintf(temp,"Topic : %s",topic_name);
+        sprintf(temp,"%s",topic_name);
 
         gtk_widget_override_font(label_topic2,
                             pango_font_description_from_string("Monospace 9"));
@@ -1352,7 +1355,7 @@ void sub_activate( GtkApplication *app, gpointer user_data ) {
 
 //////////////////////////////////////////////////////////////////////////////
 
-    img1 = gtk_image_new_from_file("test_photo.jpg");
+    img1 = gtk_image_new_from_file("main_pic.jpg");
     gtk_grid_attach (GTK_GRID (sub_grid), img1, 0, 1, 1, 1);
     gtk_widget_set_size_request(img1,400,300);
     gtk_widget_set_margin_start ( img1, 650 );
@@ -1410,25 +1413,51 @@ void sub_activate( GtkApplication *app, gpointer user_data ) {
     gtk_widget_set_margin_end ( sub_button1, 120 );
     gtk_widget_set_margin_top ( sub_button1, 20 );
 
+    label_head_server = gtk_label_new("Server : ");
+    gtk_widget_override_font(label_head_server,
+                            pango_font_description_from_string("Monospace 9"));
+    gtk_grid_attach (GTK_GRID (sub_grid), label_head_server, 0, 6, 1, 1);
+    gtk_widget_set_margin_start ( label_head_server, 0 );
+    gtk_widget_set_margin_end ( label_head_server, 980 );
+    gtk_widget_set_margin_top ( label_head_server, 75 );
+
     char temp[50];
-    sprintf(temp,"Server : %s ",server_name);
+    sprintf(temp,"%s ",server_name);
 
     label_sever2 = gtk_label_new(temp);
     gtk_widget_override_font(label_sever2,
                             pango_font_description_from_string("Monospace 9"));
     gtk_grid_attach (GTK_GRID (sub_grid), label_sever2, 0, 6, 1, 1);
-    gtk_widget_set_margin_start ( label_sever2, 0 );
-    gtk_widget_set_margin_end ( label_sever2, 870 );
-    gtk_widget_set_margin_top ( label_sever2, 75 );
     
-    sprintf(temp,"Topic : %s",topic_name);
+    gtk_widget_set_margin_start ( label_sever2, 0 );
+    gtk_widget_set_margin_end ( label_sever2, 780 );
+    gtk_widget_set_margin_top ( label_sever2, 75 );
+    /*
+    gtk_grid_attach (GTK_GRID (box1), label_sever2, 0, 6, 1, 1);
+    gtk_window_get_resizable(label_sever2);
+    gtk_widget_set_margin_start ( label_sever2, 0 );
+    gtk_widget_set_margin_end ( label_sever2, 780 );
+    gtk_widget_set_margin_top ( label_sever2, 75 );
+    */
+
+
+    label_head_topic = gtk_label_new("Topic  : ");
+    gtk_widget_override_font(label_head_topic,
+                            pango_font_description_from_string("Monospace 9"));
+    gtk_grid_attach (GTK_GRID (sub_grid), label_head_topic, 0, 7, 1, 1);
+    gtk_widget_set_margin_start ( label_head_topic, 0 );
+    gtk_widget_set_margin_end ( label_head_topic, 980 );
+    gtk_widget_set_margin_top ( label_head_topic, 0 );
+
+
+    sprintf(temp," %s",topic_name);
 
     label_topic2 = gtk_label_new(temp);
     gtk_widget_override_font(label_topic2,
                             pango_font_description_from_string("Monospace 9"));
     gtk_grid_attach (GTK_GRID (sub_grid), label_topic2, 0, 7, 1, 1);
     gtk_widget_set_margin_start ( label_topic2, 0 );
-    gtk_widget_set_margin_end ( label_topic2, 940 );
+    gtk_widget_set_margin_end ( label_topic2, 800 );
     gtk_widget_set_margin_top ( label_topic2, 0 );
 
     main_status = gtk_label_new_with_mnemonic("");
@@ -1566,35 +1595,49 @@ void main_activate( GtkApplication *app, gpointer user_data ) {
     gtk_widget_set_margin_start ( main_button3, 0 );
     gtk_widget_set_margin_end ( main_button3, 0 );
 
+    label_head_server2 = gtk_label_new("Server : ");
+    gtk_widget_override_font(label_head_server2,
+                            pango_font_description_from_string("Monospace 9"));
+    gtk_grid_attach (GTK_GRID (grid), label_head_server2, 0, 6, 1, 1);
+    gtk_widget_set_margin_start ( label_head_server2, 0 );
+    gtk_widget_set_margin_end ( label_head_server2, 345 );
+    gtk_widget_set_margin_top ( label_head_server2, 57 );
+    
     char temp[50];
-    sprintf(temp,"Server : %s ",server_name);
+    sprintf(temp,"%s ",server_name);
 
     label_sever2 = gtk_label_new(temp);
     gtk_widget_override_font(label_sever2,
                             pango_font_description_from_string("Monospace 9"));
     gtk_grid_attach (GTK_GRID (grid), label_sever2, 0, 6, 1, 1);
-    gtk_widget_set_margin_top ( label_sever2, 50 );
     gtk_widget_set_margin_start ( label_sever2, 0 );
-    gtk_widget_set_margin_end ( label_sever2, 240 );
+    gtk_widget_set_margin_end ( label_sever2, 145 );
+    gtk_widget_set_margin_top ( label_sever2, 57 );
     
-    sprintf(temp,"Topic : %s",topic_name);
+    sprintf(temp,"%s",topic_name);
+
+    label_head_topic2 = gtk_label_new("Topic  : ");
+    gtk_widget_override_font(label_head_topic2,
+                            pango_font_description_from_string("Monospace 9"));
+    gtk_grid_attach (GTK_GRID (grid), label_head_topic2, 0, 7, 1, 1);
+    gtk_widget_set_margin_start ( label_head_topic2, 0 );
+    gtk_widget_set_margin_end ( label_head_topic2, 345 );
+    gtk_widget_set_margin_top ( label_head_topic2, 5 );
 
     label_topic2 = gtk_label_new(temp);
     gtk_widget_override_font(label_topic2,
                             pango_font_description_from_string("Monospace 9"));
     gtk_grid_attach (GTK_GRID (grid), label_topic2, 0, 7, 1, 1);
-    gtk_widget_set_margin_top ( label_topic2, 0 );
     gtk_widget_set_margin_start ( label_topic2, 0 );
-    gtk_widget_set_margin_end ( label_topic2, 310 );
-    
+    gtk_widget_set_margin_end ( label_topic2, 155 );
+    gtk_widget_set_margin_top ( label_topic2, 5 );
 
 
     main_status = gtk_label_new_with_mnemonic("");
     gtk_grid_attach (GTK_GRID (grid), main_status, 8, 6, 1, 1);
-    gtk_widget_set_margin_top ( main_status, 60 );
     gtk_widget_set_margin_start ( main_status, 0 );
     gtk_widget_set_margin_end ( main_status, 0 );
-    
+    gtk_widget_set_margin_top ( main_status, 55 );
 
     if(!is_connected){
         gtk_label_set_text(GTK_LABEL(main_status),"• Connect");
